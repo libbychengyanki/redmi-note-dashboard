@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redmi Note 15 全球价格看板</title>
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --surface: #ffffff;
+    --surface2: #f7f8fa;
+    --border: #e4e6eb;
+    --text: #1a1a2e;
+    --text2: #6b7280;
+    --accent: #2563eb;
+    --accent2: #3b82f6;
+    --accent-light: #eff6ff;
+    --green: #059669;
+    --red: #dc2626;
+    --orange: #d97706;
+    --shadow: 0 1px 3px rgba(0,0,0,.08);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  .dark {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #334155;
+    --border: #475569;
+    --text: #f1f5f9;
+    --text2: #94a3b8;
+    --accent: #60a5fa;
+    --accent2: #93c5fd;
+    --accent-light: #1e293b;
+    --shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); line-height:1.5;
+    transition: background .3s, color .3s;
+    padding: 20px;
+  }
+  .container { max-width:1400px; margin:0 auto; }
+
+  /* Header */
+  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+  .header h1 { font-size:24px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  .header h1 span { background:var(--accent); color:#fff; font-size:14px; padding:2px 10px; border-radius:20px; font-weight:500; }
+  .theme-toggle { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 16px; cursor:pointer; color:var(--text); font-size:14px; }
+  .theme-toggle:hover { background:var(--surface2); }
+
+  /* KPI */
+  .kpi-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:12px; margin-bottom:24px; }
+  .kpi-card { background:var(--surface); border-radius:var(--radius); padding:16px 20px; box-shadow:var(--shadow); }
+  .kpi-card .label { font-size:12px; color:var(--text2); text-transform:uppercase; letter-spacing:.5px; }
+  .kpi-card .value { font-size:28px; font-weight:700; margin-top:4px; }
+  .kpi-card .sub { font-size:13px; color:var(--text2); margin-top:2px; }
+
+  /* Controls */
+  .controls { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
+  .controls .search-wrap { flex:1; min-width:200px; }
+  .controls .search-wrap input {
+    width:100%; padding:8px 14px; border:1px solid var(--border); border-radius:var(--radius-sm);
+    background:var(--surface); color:var(--text); font-size:14px; outline:none;
+  }
+  .controls .search-wrap input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.15); }
+  .region-tabs { display:flex; gap:4px; flex-wrap:wrap; }
+  .region-tab {
+    padding:6px 14px; border-radius:20px; border:1px solid var(--border); background:var(--surface);
+    color:var(--text2); font-size:13px; cursor:pointer; transition:all .15s; white-space:nowrap;
+  }
+  .region-tab:hover { border-color:var(--accent); color:var(--accent); }
+  .region-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .model-chips { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:16px; }
+  .model-chip {
+    padding:4px 12px; border-radius:16px; border:1px solid var(--border); background:var(--surface);
+    color:var(--text2); font-size:12px; cursor:pointer; transition:all .15s;
+  }
+  .model-chip:hover { border-color:var(--accent); color:var(--accent); }
+  .model-chip.active { background:var(--accent-light); color:var(--accent); border-color:var(--accent); font-weight:600; }
+
+  /* Stats bar */
+  .stats-bar { font-size:13px; color:var(--text2); margin-bottom:12px; display:flex; gap:16px; flex-wrap:wrap; }
+
+  /* Table */
+  .table-wrap { background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { padding:10px 14px; text-align:left; border-bottom:1px solid var(--border); white-space:nowrap; }
+  th { background:var(--surface2); font-weight:600; color:var(--text2); font-size:12px; cursor:pointer; user-select:none; position:relative; }
+  th:hover { color:var(--text); }
+  th .sort-icon { opacity:.3; margin-left:4px; }
+  th.sort-asc .sort-icon, th.sort-desc .sort-icon { opacity:1; }
+  th.sort-asc .sort-icon::after { content:'▲'; font-size:10px; }
+  th.sort-desc .sort-icon::after { content:'▼'; font-size:10px; }
+  th:not(.sort-asc):not(.sort-desc) .sort-icon::after { content:'↕'; font-size:10px; }
+  tr:hover { background:var(--accent-light); }
+  td:first-child { font-weight:600; }
+  td .region-badge {
+    display:inline-block; font-size:11px; padding:1px 8px; border-radius:10px;
+    background:var(--accent-light); color:var(--accent); font-weight:500;
+  }
+  td .price { font-variant-numeric:tabular-nums; }
+  td .price.missing { color:var(--text2); font-style:italic; }
+  .quality-badge { font-size:11px; padding:1px 8px; border-radius:10px; }
+  .quality-badge.full { background:#ecfdf5; color:#059669; }
+  .quality-badge.partial { background:#fffbeb; color:#d97706; }
+  .quality-badge.limited { background:#fef2f2; color:#dc2626; }
+
+  /* Chart section */
+  .chart-section { margin-top:24px; }
+  .chart-section h2 { font-size:18px; margin-bottom:12px; }
+  .chart-card { background:var(--surface); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); }
+  .chart-card .chart-hint { font-size:13px; color:var(--text2); margin-bottom:16px; }
+  .bar-chart { display:flex; flex-direction:column; gap:6px; }
+  .bar-row { display:grid; grid-template-columns:120px 1fr 80px; align-items:center; gap:12px; }
+  .bar-row .bar-label { font-size:13px; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text2); }
+  .bar-row .bar-track { height:24px; background:var(--surface2); border-radius:6px; overflow:hidden; position:relative; }
+  .bar-row .bar-fill {
+    height:100%; border-radius:6px; transition:width .6s ease;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .bar-row .bar-value { font-size:13px; font-weight:600; }
+
+  /* Competition */
+  .comp-section { margin-top:24px; }
+  .comp-section h2 { font-size:18px; margin-bottom:12px; }
+
+  /* Footer */
+  .footer { margin-top:32px; padding:16px 0; text-align:center; font-size:12px; color:var(--text2); border-top:1px solid var(--border); }
+
+  /* Responsive */
+  @media(max-width:768px) {
+    body { padding:12px; }
+    .header h1 { font-size:18px; }
+    .kpi-row { grid-template-columns:repeat(2,1fr); }
+    .bar-row { grid-template-columns:80px 1fr 60px; gap:8px; }
+    .bar-row .bar-label { font-size:11px; }
+  }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .table-wrap, .kpi-card, .chart-card { animation:fadeIn .4s ease; }
+
+  /* Empty state */
+  .empty-state { padding:40px; text-align:center; color:var(--text2); font-size:14px; }
+
+  /* Section tabs */
+  .section-tabs { display:flex; gap:4px; margin-bottom:20px; border-bottom:2px solid var(--border); }
+  .section-tab {
+    padding:10px 20px; border-radius:8px 8px 0 0; border:1px solid transparent; border-bottom:none;
+    background:transparent; color:var(--text2); font-size:14px; cursor:pointer; font-weight:500;
+    transition:all .15s; position:relative; bottom:-2px;
+  }
+  .section-tab:hover { color:var(--accent); background:var(--accent-light); }
+  .section-tab.active {
+    background:var(--surface); color:var(--accent); border-color:var(--border); font-weight:600;
+  }
+  .section-tab .badge {
+    font-size:11px; background:var(--accent-light); color:var(--accent); padding:0 8px; border-radius:10px; margin-left:6px;
+  }
+  .section-tab.active .badge { background:var(--accent); color:#fff; }
+
+  /* History */
+  .history-controls { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
+  .history-controls select {
+    padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius-sm);
+    background:var(--surface); color:var(--text); font-size:13px; outline:none; cursor:pointer; min-width:120px;
+  }
+  .history-controls select:focus { border-color:var(--accent); }
+  .trend-chart-wrap { width:100%; overflow-x:auto; padding:10px 0; }
+  .trend-single {
+    text-align:center; padding:40px 0;
+  }
+  .trend-single .big-price { font-size:48px; font-weight:700; color:var(--accent); }
+  .trend-single .meta { color:var(--text2); margin-top:8px; font-size:14px; }
+  .trend-single .hint {
+    margin-top:24px; padding:16px; background:var(--accent-light); border-radius:8px;
+    color:var(--text2); font-size:13px;
+  }
+</style>
+</head>
+<body>
+<div class="container" id="app">
+  <div class="header">
+    <h1>Redmi Note 15 全球价格看板 <span>23 国</span></h1>
+    <button class="theme-toggle" onclick="toggleTheme()">🌓 深色/浅色</button>
+  </div>
+
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <!-- Section tabs -->
+  <div class="section-tabs">
+    <div class="section-tab active" onclick="switchSection('overview')">📋 价格总览</div>
+    <div class="section-tab" onclick="switchSection('competitor')">🏷️ 竞争格局</div>
+    <div class="section-tab" onclick="switchSection('history')">📈 历史趋势 <span class="badge" id="historyBadge">1</span></div>
+  </div>
+
+  <!-- Overview Section -->
+  <div id="overviewSection">
+  <div class="controls">
+    <div class="region-tabs" id="regionTabs"></div>
+    <div class="search-wrap"><input id="searchInput" placeholder="搜索国家..." oninput="filterData()"></div>
+  </div>
+
+  <div class="model-chips" id="modelChips"></div>
+  <div class="stats-bar" id="statsBar"></div>
+
+  <div class="table-wrap"><table id="mainTable"><thead></thead><tbody></tbody></table></div>
+
+  <div class="chart-section">
+    <h2>📊 型号价格跨国对比</h2>
+    <div class="chart-card">
+      <div class="chart-hint" id="chartHint">📊 <strong>${modelName}</strong> 各国价格对比 (折合 USD)</div>
+      <div class="model-chips" id="chartModelChips" style="margin-bottom:16px;"></div>
+      <div class="bar-chart" id="barChart"></div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Competitor Mapping Section -->
+  <div id="competitorSection" style="display:none;">
+    <div class="controls" style="gap:12px;">
+      <div class="model-chips" id="compProductChips" style="margin-bottom:0;"></div>
+      <span style="font-size:13px;color:var(--text2);" id="compStatsBar"></span>
+    </div>
+    <div class="region-tabs" id="compRegionTabs" style="margin-bottom:8px;"></div>
+    <div class="controls" style="gap:8px;margin-bottom:8px;">
+      <div class="search-wrap" style="flex:0 0 200px;">
+        <input id="compSearchInput" placeholder="筛选国家..." oninput="renderCompMapping()">
+      </div>
+    </div>
+    <div class="model-chips" id="compBrandChips" style="margin-bottom:12px;padding-left:2px;"></div>
+    <div class="table-wrap"><table id="compMappingTable"><thead></thead><tbody></tbody></table></div>
+    <div class="comp-section">
+      <h2>🏷️ 竞品价格对照 (已有采集数据)</h2>
+      <div class="table-wrap"><table id="compTable"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- History Section -->
+  <div id="historySection" style="display:none;">
+    <div class="region-tabs" id="historyRegionTabs" style="margin-bottom:8px;"></div>
+    <div class="history-controls">
+      <select id="historyCountry" onchange="renderHistoryChart()">
+        <option value="">选择国家</option>
+      </select>
+      <select id="historyModel" onchange="renderHistoryChart()">
+        <option value="">选择型号</option>
+      </select>
+      <span style="font-size:13px;color:var(--text2);" id="historySnapshotsCount"></span>
+    </div>
+
+    <div class="chart-section">
+      <h2>📈 价格趋势 (USD)</h2>
+      <div class="chart-card" style="position:relative;">
+        <div id="trendChartContainer" class="trend-chart-wrap"></div>
+        <div id="trendEmpty" class="empty-state" style="display:block;">选择国家和型号查看价格趋势</div>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <h2>📸 数据快照</h2>
+      <div class="table-wrap"><table id="historyTable"><thead>
+        <tr><th>日期</th><th>版本</th><th>备注</th><th>覆盖国家</th></tr>
+      </thead><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    数据来源: 各国指定零售渠道官网 &middot; 采集日期: 2026-07-09 &middot; 汇率按当日市场汇率估算
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const REGIONS = ['全部','拉美','独联体','西欧','东北欧','东南亚','中东','印尼','东亚','非洲'];
+const MODEL_KEYS = ['Redmi Note 15','Redmi Note 15 5G','Redmi Note 15 Pro','Redmi Note 15 Pro 5G','Redmi Note 15 Pro+ 5G'];
+const MODEL_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6'];
+
+const summaryData = [
+  ["东亚","香港","HKD","1,299 (6+128)","1,999 (8+256)","—","2,499 (12+256)","2,999 (12+256)","Fortress","完整"],
+  ["东南亚","泰国","THB","6,699 (8+256)","8,499 (8+256)","—","9,999 (8+256) / 12,990 (12+512)","14,990 (12+512)","BNN (BaNANA)","完整"],
+  ["东南亚","越南","VND","5,490,000 (6+128)","6,590,000 (6+128)","—","10,690,000 (12+256)","12,490,000 (12+256)","TGDD/CPS","完整"],
+  ["东南亚","马来西亚","MYR","—","849 (6+128) / 949-999 (8+256)","—","—","—","TechNave/Lazada","部分缺失"],
+  ["东南亚","菲律宾","PHP","10,999 (8+128)","—","12,999 (8+256, Pro 4G)","17,999 (12+256)","25,999 (12+512)","Xiaomi PH/Lazada","完整"],
+  ["印尼","印尼","IDR","2,599,000 (6+128) / 3,099,000 (8+256)","3,299,000 (6+128) / 3,799,000 (8+256)","—","4,699,000 (8+256)","5,999,000 (8+256) / 6,799,000 (12+512)","mi.co.id/Tokopedia/Lazada","完整"],
+   ["独联体","俄罗斯","RUB","14,999 (6+128) / 18,999 (8+256)","—","24,999 (8+256) / 30,999 (12+512)","28,999 (8+256)","33,999 (8+256) / 41,999 (12+512)","DNS-shop.ru","完整"],
+  ["独联体","哈萨克斯坦","KZT","90,290 (6+128) / 113,990 (8+256)","—","—","189,990 (8+512)","204,250 (8+256)","DNS-shop.kz","完整"],
+  ["西欧","西班牙","EUR","199.90 (8+256)","259.90 (8+256)","259.90 (8+256)","299.90 (8+256)","379.90 (8+256)","El Corte Inglés","完整"],
+  ["西欧","法国","EUR","~220 (6+128)","—","—","~339 (8+256)","—","Fnac/Boulanger","部分缺失"],
+  ["西欧","德国","EUR","~158 (6+128)","199 (6+128)","—","399.90 (8+256)","399.99 (256)","Saturn/MediaMarkt","完整"],
+  ["西欧","意大利","EUR","待提供","待提供","待提供","待提供","待提供","MediaWorld","需输入价格"],
+  ["拉美","智利","CLP","—","269,990 (8+256)","—","329,990 (8+256)","424,990 (8+256)","Ripley/Entel","完整"],
+  ["拉美","秘鲁","PEN","669 (6+128)~799","1,268 (8+256)","—","1,494 (8+512)","1,649 (12+512)","Oechsle/PlazaVea","完整"],
+  ["拉美","墨西哥","MXN","5,999 (8+256)","—","7,499 (8+256)","9,999 (8+512)","10,999 (12+512)","mi.com/mx","完整"],
+  ["拉美","哥伦比亚","COP","—","—","—","1,699,050 (8+256)","2,316,950 (12+512)","Alkosto","部分缺失"],
+  ["中东","沙特","SAR","999 (8+256, Jarir)","788 (6+128)","—","1,349~1,399 (8+256)","1,699 (12+512)","Jarir/Extra/Noon","完整"],
+  ["中东","阿联酋","AED","909 (8+256, Jumbo)","644 (6+128)","—","1,059~1,299 (12+256)","1,001~1,599 (12+256)","Jumbo/Noon","完整"],
+  ["中东","土耳其","TRY","16,999 (8+256)","—","20,999 (8+256, Pro 4G)","26,999 (8+256)","32,999 (8+256)","Teknosa/Trendyol","完整"],
+  ["非洲","埃及","EGP","11,999~16,399 (6+128)","16,299~22,299 (8+256)","—","21,799~30,699 (12+256)","—","2B.com.eg/Jumia","完整"],
+  ["非洲","摩洛哥","MAD","待提供","待提供","待提供","待提供","待提供","mi-store.ma/Mobile57","需输入价格"],
+  ["非洲","尼日利亚","NGN","274,868~385,000 (6+128)","—","413,555 (8+256)","499,000 (8+256)","649,000 (12+512)","Jumia NG","完整"],
+  ["非洲","南非","ZAR","6,999 (8+256)","—","8,499 (12+512, Pro 4G)","—","10,999 (12+512)","Vodacom/Takealot","完整"]
+];
+
+// Detail data with USD prices (from redmi_note15_price_detail.csv)
+// [country, model, config, localPrice, usdPrice, currency]
+const detailData = [
+  ["香港","Redmi Note 15","6GB+128GB","1,299","~166","HKD"],
+  ["香港","Redmi Note 15 5G","8GB+256GB","1,999","~256","HKD"],
+  ["香港","Redmi Note 15 Pro 5G","12GB+256GB","2,499","~320","HKD"],
+  ["香港","Redmi Note 15 Pro+ 5G","12GB+256GB","2,999","~384","HKD"],
+  ["泰国","Redmi Note 15","8GB+256GB","6,699","~182","THB"],
+  ["泰国","Redmi Note 15 5G","8GB+256GB","8,499","~231","THB"],
+  ["泰国","Redmi Note 15 Pro 5G","8GB+256GB","9,999","~272","THB"],
+  ["泰国","Redmi Note 15 Pro 5G","12GB+512GB","12,990","~354","THB"],
+  ["泰国","Redmi Note 15 Pro+ 5G","12GB+512GB","14,990","~408","THB"],
+  ["越南","Redmi Note 15","6GB+128GB","5,490,000","~215","VND"],
+  ["越南","Redmi Note 15 5G","6GB+128GB","6,590,000","~259","VND"],
+  ["越南","Redmi Note 15 Pro 5G","12GB+256GB","10,690,000","~420","VND"],
+  ["越南","Redmi Note 15 Pro+ 5G","12GB+256GB","12,490,000","~490","VND"],
+  ["马来西亚","Redmi Note 15 5G","6GB+128GB","849","~182","MYR"],
+  ["马来西亚","Redmi Note 15 5G","8GB+256GB","949~999","~203~214","MYR"],
+  ["菲律宾","Redmi Note 15","8GB+128GB","10,999","~188","PHP"],
+  ["菲律宾","Redmi Note 15 Pro 4G","8GB+256GB","12,999~14,999","~222~256","PHP"],
+  ["菲律宾","Redmi Note 15 Pro 5G","12GB+256GB","17,999~19,999","~308~342","PHP"],
+  ["菲律宾","Redmi Note 15 Pro+ 5G","12GB+512GB","25,999~27,999","~445~479","PHP"],
+  ["印尼","Redmi Note 15","6GB+128GB","2,599,000","~160","IDR"],
+  ["印尼","Redmi Note 15","8GB+256GB","3,099,000","~190","IDR"],
+  ["印尼","Redmi Note 15 5G","6GB+128GB","3,299,000","~203","IDR"],
+  ["印尼","Redmi Note 15 5G","8GB+256GB","3,799,000","~234","IDR"],
+  ["印尼","Redmi Note 15 Pro 5G","8GB+256GB","4,699,000","~289","IDR"],
+  ["印尼","Redmi Note 15 Pro+ 5G","8GB+256GB","5,999,000","~369","IDR"],
+  ["印尼","Redmi Note 15 Pro+ 5G","12GB+512GB","6,799,000","~418","IDR"],
+  ["俄罗斯","Redmi Note 15","6GB+128GB","14,999","~192","RUB"],
+  ["俄罗斯","Redmi Note 15","8GB+128GB","15,999","~205","RUB"],
+  ["俄罗斯","Redmi Note 15","8GB+256GB","18,999","~244","RUB"],
+  ["俄罗斯","Redmi Note 15 Pro 4G","8GB+256GB","24,999","~321","RUB"],
+  ["俄罗斯","Redmi Note 15 Pro 4G","12GB+256GB","27,999","~359","RUB"],
+  ["俄罗斯","Redmi Note 15 Pro 4G","12GB+512GB","30,999","~397","RUB"],
+  ["俄罗斯","Redmi Note 15 Pro 5G","8GB+256GB","28,999","~372","RUB"],
+  ["俄罗斯","Redmi Note 15 Pro 5G","8GB+512GB","31,999","~410","RUB"],
+  ["俄罗斯","Redmi Note 15 Pro+ 5G","8GB+256GB","33,999","~436","RUB"],
+  ["俄罗斯","Redmi Note 15 Pro+ 5G","12GB+512GB","41,999","~538","RUB"],
+  ["哈萨克斯坦","Redmi Note 15","6GB+128GB","90,290","~190","KZT"],
+  ["哈萨克斯坦","Redmi Note 15","8GB+256GB","113,990","~240","KZT"],
+  ["哈萨克斯坦","Redmi Note 15 Pro 5G","8GB+512GB","189,990","~400","KZT"],
+  ["哈萨克斯坦","Redmi Note 15 Pro+ 5G","8GB+256GB","204,250","~430","KZT"],
+  ["西班牙","Redmi Note 15","8GB+256GB","199.90","~216","EUR"],
+  ["西班牙","Redmi Note 15 5G","8GB+256GB","259.90","~281","EUR"],
+  ["西班牙","Redmi Note 15 Pro 4G","8GB+256GB","259.90","~281","EUR"],
+  ["西班牙","Redmi Note 15 Pro 5G","8GB+256GB","299.90","~324","EUR"],
+  ["西班牙","Redmi Note 15 Pro+ 5G","8GB+256GB","379.90","~411","EUR"],
+  ["法国","Redmi Note 15","6GB+128GB","~220","~238","EUR"],
+  ["法国","Redmi Note 15 Pro 5G","8GB+256GB","~339","~367","EUR"],
+  ["德国","Redmi Note 15","6GB+128GB","~158","~171","EUR"],
+  ["德国","Redmi Note 15 5G","6GB+128GB","199","~215","EUR"],
+  ["德国","Redmi Note 15 Pro 5G","8GB+256GB","399.90","~433","EUR"],
+  ["德国","Redmi Note 15 Pro+ 5G","256GB","399.99","~433","EUR"],
+  ["智利","Redmi Note 15 5G","8GB+256GB","269,990","~280","CLP"],
+  ["智利","Redmi Note 15 Pro 5G","8GB+256GB","329,990","~342","CLP"],
+  ["智利","Redmi Note 15 Pro+ 5G","8GB+256GB","424,990","~440","CLP"],
+  ["秘鲁","Redmi Note 15","6GB+128GB","669~799","~175~209","PEN"],
+  ["秘鲁","Redmi Note 15 5G","8GB+256GB","1,268","~332","PEN"],
+  ["秘鲁","Redmi Note 15 Pro 5G","8GB+512GB","1,494","~391","PEN"],
+  ["秘鲁","Redmi Note 15 Pro+ 5G","12GB+512GB","1,649","~432","PEN"],
+  ["墨西哥","Redmi Note 15","8GB+256GB","5,999","~325","MXN"],
+  ["墨西哥","Redmi Note 15 Pro 4G","8GB+256GB","7,499","~406","MXN"],
+  ["墨西哥","Redmi Note 15 Pro 5G","8GB+512GB","9,999","~542","MXN"],
+  ["墨西哥","Redmi Note 15 Pro+ 5G","12GB+512GB","10,999","~596","MXN"],
+  ["哥伦比亚","Redmi Note 15 Pro 5G","8GB+256GB","1,699,050","~400","COP"],
+  ["哥伦比亚","Redmi Note 15 Pro+ 5G","12GB+512GB","~2,316,950","~550","COP"],
+  ["沙特","Redmi Note 15","8GB+256GB","894~999","~238~266","SAR"],
+  ["沙特","Redmi Note 15 5G","6GB+128GB","788","~210","SAR"],
+  ["沙特","Redmi Note 15 Pro 5G","8GB+256GB","1,269~1,399","~338~373","SAR"],
+  ["沙特","Redmi Note 15 Pro+ 5G","12GB+512GB","1,699 (Jarir/Extra)","~453","SAR"],
+  ["阿联酋","Redmi Note 15","8GB+256GB","909 (Jumbo)","~247","AED"],
+  ["阿联酋","Redmi Note 15 5G","6GB+128GB","644","~175","AED"],
+["阿联酋","Redmi Note 15 Pro 5G","12GB+256GB","1,059~1,299","~288~353","AED"],
+   ["阿联酋","Redmi Note 15 Pro+ 5G","12GB+256GB","1,001~1,599","~272~435","AED"],
+   ["土耳其","Redmi Note 15","8GB+256GB","16,999","~485","TRY"],
+  ["土耳其","Redmi Note 15 Pro 4G","8GB+256GB","20,999","~599","TRY"],
+  ["土耳其","Redmi Note 15 Pro 5G","8GB+256GB","26,999","~771","TRY"],
+  ["土耳其","Redmi Note 15 Pro+ 5G","8GB+256GB","32,999","~943","TRY"],
+  ["埃及","Redmi Note 15","6GB+128GB","11,999~16,399","~244~333","EGP"],
+  ["埃及","Redmi Note 15 5G","8GB+256GB","16,299~22,299","~331~453","EGP"],
+  ["埃及","Redmi Note 15 Pro 5G","12GB+256GB","21,799~30,699","~443~623","EGP"],
+  ["摩洛哥","Redmi Note 15 5G","6GB+128GB","待提供","待提供","MAD"],
+  ["尼日利亚","Redmi Note 15","6GB+128GB","274,868~385,000","~177~248","NGN"],
+  ["尼日利亚","Redmi Note 15 Pro 4G","8GB+256GB","413,555","~267","NGN"],
+  ["尼日利亚","Redmi Note 15 Pro 5G","8GB+256GB","499,000","~322","NGN"],
+  ["尼日利亚","Redmi Note 15 Pro+ 5G","12GB+512GB","649,000","~419","NGN"],
+  ["南非","Redmi Note 15","8GB+256GB","6,999","~380","ZAR"],
+  ["南非","Redmi Note 15 Pro 4G","12GB+512GB","8,499","~461","ZAR"],
+  ["南非","Redmi Note 15 Pro+ 5G","12GB+512GB","10,999","~597","ZAR"]
+];
+
+// Helper: get best USD price for a (country, model) pair
+function getUsdPrice(country, modelName){
+  const match = detailData.filter(d => d[0]===country && d[1]===modelName);
+  if(match.length===0) return null;
+  // Pick the row with the lowest price
+  let best = match[0];
+  for(const m of match){
+    const v = parseFloat((m[4].match(/[\d.]+/)||['0'])[0]);
+    const bv = parseFloat((best[4].match(/[\d.]+/)||['0'])[0]);
+    if(!isNaN(v) && (isNaN(bv) || v < bv)) best = m;
+  }
+  // Extract first number from strings like "~244~333", "~238", "~203~214"
+  const numMatch = best[4].match(/[\d.]+/);
+  const usd = numMatch ? parseFloat(numMatch[0]) : NaN;
+  return isNaN(usd) ? null : { usd, local: best[3], currency: best[5], config: best[2], usdDisplay: best[4].trim() };
+}
+
+// ===== COMPETITOR MAPPING DATA (from competitor_summary.json) =====
+const PRODUCT_CODES = ['P16U','P16','P6','P17','P7'];
+const PRODUCT_NAMES = {
+  P16U: 'Note 15 Pro+ 5G', P16: 'Note 15 Pro 5G', P6: 'Note 15 Pro',
+  P17: 'Note 15 5G', P7: 'Note 15'
+};
+const PRODUCT_STATS = { P16U:{cnt:26}, P16:{cnt:24}, P6:{cnt:19}, P17:{cnt:25}, P7:{cnt:26} };
+
+const compMapping = {
+  P16U: {
+    "中国香港":["Samsung A57","Samsung A56","Honor 400","Honor 600"],
+    "印尼":["Samsung A57","Samsung A56","OPPO Reno 14F","OPPO Reno 15F","Honor X8c","Honor X8d"],
+    "泰国":["Samsung A57","OPPO Reno 14F","OPPO Reno 15F","Honor 600 lite","Honor X8c","Honor X8d"],
+    "菲律宾":["Samsung A57","OPPO Reno 14F","OPPO Reno 15F","Honor X8c","Honor X8d","vivo V50"],
+    "越南":["Samsung A57","Samsung A56","OPPO Reno 15F","Honor X8c","Honor X8d","vivo V50 Lite"],
+    "马来西亚":["Samsung A57","OPPO Reno 14F","Honor 600 lite","Honor X8c","Honor X8d","vivo V50"],
+    "俄罗斯":["Samsung A57","Samsung A56","OPPO Reno 15F","Honor X9c","Honor X9d"],
+    "西班牙":["Samsung A57","Samsung A56","Honor 400","Honor 600","Moto Edge 60 Fusion"],
+    "法国":["Samsung A57","Samsung A56","Honor 400","Honor 600","Moto Edge 60 Fusion"],
+    "德国":["Samsung A57","Samsung A56","Honor 400","Honor 600"],
+    "意大利":["Samsung A57","Samsung A56","Honor 400","Honor 600","Moto Edge 60 Fusion"],
+    "墨西哥":["Samsung A57","Samsung A56","Honor 400","Honor 600"],
+    "哥伦比亚":["Samsung A57","OPPO Reno 14F","OPPO Reno 15F","Honor 400","Honor 600","Moto Edge 60 Fusion"],
+    "秘鲁":["Samsung A57","Samsung A56","OPPO Reno 14F","Honor 400","Honor 600"],
+    "智利":["Samsung A57","Samsung A56","Honor 400","Honor 600"],
+    "沙特":["Samsung A57","Samsung A56","Honor X8c","Honor X8d"],
+    "阿联酋":["Samsung A57","Samsung A56","Honor X8c","Honor X8d"],
+    "土耳其":["Samsung A57","Samsung A56","OPPO Reno 15F","Honor X8c","Honor X8d"],
+    "伊拉克":["Samsung A57","Samsung A56","Honor X8c","Honor X8d"],
+    "埃及":["Samsung A57","Samsung A56","Honor X8c","Honor X8d"],
+    "摩洛哥":["Samsung A57","Samsung A56"],
+    "南非":["Samsung A57","Samsung A56","Honor X8c","Honor X8d"],
+    "尼日利亚":["Samsung A57","Honor X8c","Honor X8d"],
+    "波兰":["Samsung A57","Samsung A56","Honor 400","Honor 600","Honor Magic 8 lite"],
+    "捷克":["Samsung A57","Samsung A56","Honor 400","Honor 600","Honor Magic 8 lite"],
+    "罗马尼亚":["Samsung A57","Samsung A56","Honor 400","Honor 600","Honor Magic 8 lite"]
+  },
+  P16: {
+    "中国香港":["Samsung A37","Samsung A36","OPPO Reno 14F","OPPO Reno 15F","Honor X9c","Honor X9d"],
+    "印尼":["Samsung A37","Samsung A36","Honor X9c","OPPO Reno 14F","OPPO Reno 15F"],
+    "泰国":["Samsung A37","Samsung A36","Samsung A26","OPPO Reno 14F","OPPO Reno 15F","Honor X9c","Honor X9d"],
+    "菲律宾":["Samsung A37","Samsung A36","OPPO A6 pro 5G","OPPO Reno 14F","OPPO Reno 15F","Honor X9d"],
+    "越南":["Samsung A37","Samsung A36","OPPO A6 pro 5G","OPPO Reno 15F","Honor X9d"],
+    "马来西亚":["Samsung A37","Samsung A36","Honor X9d","Honor X9c","OPPO Reno 14F","OPPO Reno 15F"],
+    "俄罗斯":["Samsung A37","Samsung A36","Honor X9c","Honor X9d","OPPO Reno 14F","OPPO Reno 15F"],
+    "西班牙":["Samsung A37","Samsung A36","Honor Magic 8 lite"],
+    "法国":["Samsung A37","Samsung A36","Honor Magic 7 lite","Honor Magic 8 lite"],
+    "德国":["Samsung A37","Samsung A36","Honor Magic 8 lite"],
+    "意大利":["Samsung A37","Samsung A36","Honor Magic 8 lite"],
+    "墨西哥":["Samsung A56","Samsung A37","Honor Magic 7 lite","Honor Magic 8 lite","OPPO Reno 14F"],
+    "哥伦比亚":["Samsung A56","Samsung A37","OPPO Reno 14F","Honor Magic 7 lite","Honor Magic 8 lite"],
+    "秘鲁":["Samsung A56","Samsung A37","Honor Magic 7 lite","Honor Magic 8 lite","OPPO Reno 14F"],
+    "智利":["Samsung A37","Samsung A36","Honor Magic 7 lite","Honor Magic 8 lite","Moto Edge 60 Fusion"],
+    "沙特":["Samsung A37","Samsung A36","Honor X9d","OPPO Reno 15F"],
+    "阿联酋":["Samsung A37","Samsung A36","Honor X9d","OPPO Reno 14F","OPPO Reno 15F"],
+    "土耳其":["Samsung A37","Samsung A36","OPPO Reno 15F","Honor Magic 8 lite","Honor Magic 7 lite"],
+    "伊拉克":["Samsung A37","Samsung A36","Honor X9d"],
+    "埃及":["Samsung A37","Samsung A36","Honor X9c","Honor X9d","OPPO Reno 15F"],
+    "摩洛哥":["Samsung A36"],
+    "波兰":["Samsung A37","Samsung A36","Honor Magic 8 lite"],
+    "捷克":["Samsung A37","Samsung A36","Honor Magic 7 lite","Honor Magic 8 lite"],
+    "罗马尼亚":["Samsung A37","Samsung A36","Honor Magic 7 lite","Honor Magic 8 lite"]
+  },
+  P6: {
+    "俄罗斯":["Samsung A26","Samsung A36"],
+    "西班牙":["Honor 400 lite","Samsung A26"],
+    "法国":["Honor 400 lite","Samsung A26"],
+    "德国":["Honor 400 lite","Samsung A26","Samsung A36","Samsung A37"],
+    "意大利":["Honor 400 lite","Samsung A26"],
+    "墨西哥":["Samsung A36","Samsung A37","Honor X8c"],
+    "哥伦比亚":["Samsung A26","Samsung A36"],
+    "秘鲁":["Honor 400 lite","Samsung A26","Samsung A36","Samsung A37","Honor 600 lite"],
+    "土耳其":["Samsung A26","Samsung A36","Samsung A37"],
+    "阿联酋":["Honor 400 lite","Samsung A26","Samsung A27"],
+    "伊拉克":["Honor 400 lite","Samsung A26"],
+    "尼日利亚":["Samsung A26","Tecno Camon 40 Pro"],
+    "南非":["Honor 400 lite","Samsung A26","Samsung A36"],
+    "摩洛哥":["Samsung A26","Honor 400 lite"],
+    "波兰":["Honor 400 lite","Samsung A26"],
+    "捷克":["Honor 400 lite","Samsung A26"],
+    "罗马尼亚":["Samsung A26"],
+    "菲律宾":["Samsung A26"],
+    "越南":["Honor 400 lite","Samsung A26"]
+  },
+  P17: {
+    "中国香港":["Honor 400 lite","OPPO A6 pro 5G"],
+    "印尼":["Samsung A17 5G","OPPO A5 pro 5G","OPPO A6 pro 5G","Honor X7d 5G","vivo V40 5G","Infinix Hot 60Pro+"],
+    "泰国":["Samsung A17 5G","OPPO A5 pro 5G","OPPO A6 pro 5G","Honor X7d 5G","Honor X7e 5G"],
+    "菲律宾":["Samsung A17 5G","OPPO A5 pro 5G","OPPO A6 pro 5G","Honor X7d 5G","vivo V40 5G"],
+    "越南":["Samsung A17 5G","OPPO A5 pro 5G","OPPO A6 pro 5G","Honor X7d 5G"],
+    "马来西亚":["Samsung A17 5G","OPPO A5 pro 5G","Honor X7d 5G","Honor X7e 5G","vivo V40 5G"],
+    "俄罗斯":["Samsung A17 5G","Samsung A17 4G","Honor X7d 5G","Honor X7e 5G"],
+    "西班牙":["Samsung A17 5G","Samsung A17 4G","Moto Edge 60 Fusion"],
+    "德国":["Samsung A17 5G","Samsung A17 4G","Moto Edge 60 Fusion"],
+    "意大利":["Samsung A17 5G","Samsung A17 4G","Moto Edge 60 Fusion"],
+    "墨西哥":["Samsung A17 5G","Honor X7d 5G","Honor X7e 5G","OPPO A5 pro 5G","vivo V40 5G"],
+    "哥伦比亚":["Samsung A17 5G","Honor X7d 5G","Honor X7e 5G"],
+    "秘鲁":["Samsung A17 5G","Honor X7d 5G","Honor X7e 5G","OPPO A5 pro 5G"],
+    "智利":["Samsung A17 5G","Honor X7d 5G","Honor X7e 5G","OPPO A5 pro 5G","vivo V40 5G"],
+    "沙特":["Samsung A17 5G","Honor X7d 5G","Honor X7e 5G"],
+    "阿联酋":["Samsung A17 5G","Honor X7d 5G","Honor X7e 5G"],
+    "土耳其":["Samsung A17 5G","Samsung A26","Tecno Spark 40 Pro 4G"],
+    "伊拉克":["Samsung A17 5G","Tecno 40C","Tecno 40C Pro","Honor 400 lite"],
+    "埃及":["Samsung A17 5G","Samsung A17 4G","OPPO A5 pro 5G","OPPO A6 pro 5G","Honor X7d 5G","Honor X7e 5G"],
+    "摩洛哥":["Samsung A17 5G","Honor X7d 5G","Honor X7e 5G"],
+    "南非":["Samsung A17 5G","OPPO A5 pro 5G","Honor X7d 5G"],
+    "尼日利亚":["Samsung A17 5G","OPPO A5 pro 5G","OPPO A6 pro 5G","Tecno Spark 40 Pro","Infinix Hot 60 Pro"],
+    "波兰":["Samsung A17 5G","Samsung A17 4G","Honor X7d 5G","Honor X7e 5G","Moto Edge 60 Fusion"],
+    "捷克":["Samsung A17 5G","Samsung A17 4G","Honor X7d 5G","Honor X7e 5G","Moto Edge 60 Fusion"],
+    "罗马尼亚":["Samsung A17 5G","Samsung A17 4G","Honor X7d 5G","Honor X7e 5G","Moto Edge 60 Fusion"]
+  },
+  P7: {
+    "中国香港":["Samsung A17 5G","Honor 400 lite","Honor 600 lite"],
+    "印尼":["Samsung A17 4G","Samsung A17 5G","OPPO A5","OPPO A6","vivo Y29","Infinix Hot 60Pro+"],
+    "泰国":["Samsung A17 4G","Samsung A17 5G","OPPO A5 Pro 4G","OPPO A6 Pro 5G","OPPO A6 4G","Honor X7d 5G"],
+    "菲律宾":["Samsung A17 4G","Samsung A17 5G","OPPO A5 4G","OPPO A6 Pro 4G","Honor X7d"],
+    "越南":["Samsung A17 4G","Samsung A17 5G","OPPO A5","OPPO A6","OPPO A6 Pro"],
+    "马来西亚":["Samsung A17 4G","Samsung A17 5G","Honor X7d","Honor X7e"],
+    "俄罗斯":["Samsung A17 4G","Samsung A26","Honor 400 lite","Honor X8c","Honor X8d"],
+    "西班牙":["Samsung A17 4G","Samsung A17 5G","Honor 400 smart"],
+    "法国":["Samsung A17 4G","Samsung A17 5G","Honor 400 smart"],
+    "德国":["Samsung A17 4G","Samsung A17 5G","Honor 400 smart"],
+    "意大利":["Samsung A17 4G","Samsung A17 5G","Honor 400 smart"],
+    "墨西哥":["Samsung A26","OPPO A5 Pro","OPPO A6 Pro 5G","Honor X7d"],
+    "哥伦比亚":["Samsung A17 5G","Samsung A26","Honor X8c","Honor X8d","Moto Edge 60 Fusion"],
+    "秘鲁":["Samsung A26","Honor X8c","Honor X8d"],
+    "智利":["Samsung A17 5G","Samsung A26","Moto G86 Power","Honor 400 lite"],
+    "沙特":["Samsung A17 4G","Samsung A17 5G","Honor X8c","Honor X8d","Honor X7d 5G"],
+    "阿联酋":["Samsung A17 4G","Samsung A17 5G","Honor 400 lite","Honor 600 lite"],
+    "土耳其":["Samsung A17 5G","Samsung A26","Tecno Spark 40 Pro 4G"],
+    "伊拉克":["Tecno 40C","Tecno 40C Pro","Honor 400 lite"],
+    "埃及":["Samsung A17 4G","Samsung A17 5G","Samsung A26","OPPO A5 4G","OPPO A6 4G"],
+    "摩洛哥":["Samsung A17 4G","Honor X8d"],
+    "南非":["Samsung A26","Honor X7d 5G"],
+    "尼日利亚":["Samsung A17 4G","Tecno Spark 40 Pro","Tecno Camon 50","Infinix Hot 60 Pro"],
+    "波兰":["Samsung A17 4G","Samsung A17 5G","Moto G56 5G"],
+    "捷克":["Samsung A17 4G","Samsung A17 5G","Moto Edge 60 Fusion","Moto G56 5G"],
+    "罗马尼亚":["Samsung A17 4G","Samsung A17 5G","Honor 400 lite","Honor 600 lite","Honor X8c","Honor X8d","Moto G86"]
+  }
+};
+
+const compData = [
+  // [区域, 国家, 竞品型号, 竞品配置, 竞品当地价, 竞品USD, 我方型号, 我方配置, 我方当地价, 我方USD, 价差]
+  ["东亚","香港","Galaxy A36","8GB+256GB","HK$2,698","~346","Note 15 Pro+ 5G","12GB+256GB","HK$2,999","~384","+HK$301 (≈+$38)"],
+  ["拉美","智利","Galaxy A56 5G","128GB","$329,990 CLP","~342","Note 15 Pro 5G","8GB+256GB","$329,990 CLP","~342","持平"],
+  ["拉美","秘鲁","Galaxy A56 5G","8GB+256GB","S/1,409","~369","Note 15 Pro 5G","8GB+512GB","S/1,494","~391","+S/85 (≈+$22)"],
+  ["拉美","哥伦比亚","Galaxy A56 5G","12GB+256GB","$1,699,900 COP","~403","Note 15 Pro 5G","8GB+256GB","$1,699,050 COP","~400","基本持平"],
+  ["拉美","墨西哥","Galaxy A56 5G","8GB+256GB","~$10,499 MXN","~569","Note 15 Pro 5G","8GB+512GB","$9,999 MXN","~542","-$500 MXN (≈-$27)"],
+  ["西欧","西班牙","Galaxy A56 5G","8GB+128GB","€479","~518","Note 15 Pro 5G","8GB+256GB","€299.90","~324","-€179 (≈-$194)"],
+  ["西欧","意大利","Galaxy A56 5G","8GB+256GB","~€350","~379","Note 15 Pro+ 5G","—","—","~433","+€83 (≈+$54)"],
+  ["独联体","俄罗斯","Galaxy A56 5G","8GB+128GB","~₽35,990","~408","Note 15 Pro 5G","8GB+256GB","₽28,999","~372","-₽6,991 (≈-$79)"],
+  ["独联体","哈萨克斯坦","Galaxy A56 5G","8GB+128GB","₸188,190","~396","Note 15 Pro 5G","8GB+512GB","₸189,990","~400","基本持平"]
+];
+
+// ===== STATE =====
+let regionFilter = '全部';
+let modelFilter = -1; // -1 = all models
+let searchQuery = '';
+let sortCol = -1;
+let sortAsc = true;
+let chartModel = 0; // index into MODEL_KEYS
+let compProduct = 'P16U'; // selected product in competitor view
+let compSearch = '';
+let compBrand = ''; // '' = all brands
+let compRegion = '全部';
+
+const COMP_REGIONS = ['全部','拉美','独联体','西欧','东北欧','东南亚','中东','印尼','东亚','非洲'];
+
+// ===== COMPETITOR REGION TABS =====
+function renderCompRegionTabs() {
+  const el = document.getElementById('compRegionTabs');
+  if(!el) return;
+  el.innerHTML = COMP_REGIONS.map(r =>
+    `<div class="region-tab${r===compRegion?' active':''}" data-comp-region="${r}">${r}</div>`
+  ).join('');
+}
+
+// ===== COMPETITOR MAPPING RENDER =====
+function renderCompProductChips() {
+  const el = document.getElementById('compProductChips');
+  if(!el) return;
+  el.innerHTML = PRODUCT_CODES.map(c =>
+    `<div class="model-chip${compProduct===c?' active':''}" data-comp-prod="${c}">${PRODUCT_NAMES[c]} <span style="opacity:.6;font-size:11px;">(${Object.keys(compMapping[c]).length}国)</span></div>`
+  ).join('');
+}
+
+function extractBrand(comp) { return comp.split(' ')[0]; }
+
+function renderCompBrandChips() {
+  const prod = compMapping[compProduct];
+  if(!prod) return;
+  const el = document.getElementById('compBrandChips');
+  if(!el) return;
+  // Count countries per brand
+  const brandCounts = {};
+  Object.values(prod).forEach(comps => {
+    const seen = new Set();
+    comps.forEach(c => { const b = extractBrand(c); if(b) seen.add(b); });
+    seen.forEach(b => { brandCounts[b] = (brandCounts[b] || 0) + 1; });
+  });
+  const brands = Object.keys(brandCounts).sort();
+  el.innerHTML = `<span style="font-size:12px;color:var(--text2);margin-right:6px;">品牌筛选:</span>
+    <div class="model-chip${!compBrand?' active':''}" data-comp-brand="">全部</div>` +
+    brands.map(b =>
+      `<div class="model-chip${compBrand===b?' active':''}" data-comp-brand="${b}">${b} <span style="opacity:.6;">(${brandCounts[b]})</span></div>`
+    ).join('');
+}
+
+function renderCompMapping() {
+  const prod = compMapping[compProduct];
+  if(!prod) return;
+  compSearch = (document.getElementById('compSearchInput')?.value || '').trim();
+  
+  // Region mapping for grouping
+  const regionMap = {
+    '中国香港':'东亚',
+    '印尼':'印尼',
+    '泰国':'东南亚','菲律宾':'东南亚','越南':'东南亚','马来西亚':'东南亚',
+    '俄罗斯':'独联体',
+    '西班牙':'西欧','法国':'西欧','德国':'西欧','意大利':'西欧',
+    '墨西哥':'拉美','哥伦比亚':'拉美','秘鲁':'拉美','智利':'拉美',
+    '沙特':'中东','阿联酋':'中东','土耳其':'中东','伊拉克':'中东',
+    '埃及':'非洲','摩洛哥':'非洲','南非':'非洲','尼日利亚':'非洲',
+    '波兰':'东北欧','捷克':'东北欧','罗马尼亚':'东北欧'
+  };
+
+  let entries = Object.entries(prod).map(([country, comps]) => ({ country, comps }));
+  if(compSearch) entries = entries.filter(e => e.country.includes(compSearch));
+  if(compBrand) entries = entries.filter(e => e.comps.some(c => extractBrand(c) === compBrand));
+  if(compRegion !== '全部') entries = entries.filter(e => (regionMap[e.country] || '其他') === compRegion);
+  
+  const thead = document.querySelector('#compMappingTable thead');
+  const tbody = document.querySelector('#compMappingTable tbody');
+  
+  thead.innerHTML = `<tr>
+    <th>区域</th><th>国家</th><th>竞品列表 (${PRODUCT_NAMES[compProduct]})</th><th>竞品数</th>
+  </tr>`;
+  
+  document.getElementById('compStatsBar').textContent = `显示 ${entries.length} / ${Object.keys(prod).length} 个国家`;
+  
+  tbody.innerHTML = entries.map(e => {
+    const region = regionMap[e.country] || '其他';
+    const badge = `<span class="region-badge">${region}</span>`;
+    return `<tr>
+      <td>${badge}</td>
+      <td style="font-weight:600;">${e.country}</td>
+      <td style="max-width:500px;">${e.comps.map(c => `<span style="display:inline-block;background:var(--accent-light);color:var(--accent);padding:1px 8px;border-radius:10px;font-size:11px;margin:1px 2px;">${c}</span>`).join(' ')}</td>
+      <td style="text-align:center;"><strong>${e.comps.length}</strong></td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== RENDER FUNCTIONS =====
+function qs(s, p){return(p||document).querySelector(s);}
+function qsa(s, p){return(p||document).querySelectorAll(s);}
+
+function renderKPI(){
+  const total = summaryData.length;
+  const complete = summaryData.filter(r => r[8]==='完整').length;
+  const partial = summaryData.filter(r => r[8]==='部分缺失').length;
+  const limited = total - complete - partial;
+  const html = [
+    {label:'覆盖国家', value:total, sub:'9 大区域'},
+    {label:'数据完整', value:complete, sub:`${Math.round(complete/total*100)}% 完整率`},
+    {label:'部分缺失', value:partial, sub:'部分型号缺价'},
+    {label:'待补充', value:limited, sub:'仅限少量数据'}
+  ].map(k => `<div class="kpi-card"><div class="label">${k.label}</div><div class="value">${k.value}</div><div class="sub">${k.sub}</div></div>`).join('');
+  document.getElementById('kpiRow').innerHTML = html;
+}
+
+function renderRegionTabs(){
+  const el = document.getElementById('regionTabs');
+  el.innerHTML = REGIONS.map(r =>
+    `<div class="region-tab${r===regionFilter?' active':''}" onclick="setRegion('${r}')">${r}</div>`
+  ).join('');
+}
+
+function renderModelChips(){
+  const el = document.getElementById('modelChips');
+  el.innerHTML = `<div class="model-chip${modelFilter===-1?' active':''}" onclick="setModelFilter(-1)">全部型号</div>` +
+    MODEL_KEYS.map((m,i) =>
+      `<div class="model-chip${modelFilter===i?' active':''}" onclick="setModelFilter(${i})">${m}</div>`
+    ).join('');
+}
+
+function getFilteredData(){
+  return summaryData.filter(r => {
+    if(regionFilter!=='全部' && r[0]!==regionFilter) return false;
+    if(searchQuery && !r[1].includes(searchQuery)) return false;
+    if(modelFilter>=0 && r[modelFilter+2]==='—') return false;
+    return true;
+  });
+}
+
+function renderTable(){
+  const data = getFilteredData();
+  const thead = qs('#mainTable thead');
+  const tbody = qs('#mainTable tbody');
+
+  const modelHeaders = MODEL_KEYS.map((m,i) => {
+    const colIdx = i+2;
+    return `<th onclick="sortTable(${colIdx})"${sortCol===colIdx?(sortAsc?' class="sort-asc"':' class="sort-desc"'):''}>
+      ${m.replace('Redmi Note 15','Note15').replace('Pro+','Pro+').replace('Pro 5G','Pro5G').replace(' Pro','')}
+      <span class="sort-icon"></span></th>`;
+  }).join('');
+
+  thead.innerHTML = `<tr>
+    <th onclick="sortTable(0)"${sortCol===0?(sortAsc?' class="sort-asc"':' class="sort-desc"'):''}>国家<span class="sort-icon"></span></th>
+    <th onclick="sortTable(1)"${sortCol===1?(sortAsc?' class="sort-asc"':' class="sort-desc"'):''}>货币<span class="sort-icon"></span></th>
+    ${modelHeaders}
+    <th>渠道</th>
+    <th>质量</th>
+  </tr>`;
+
+  if(data.length===0){
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">无匹配数据</div></td></tr>';
+    document.getElementById('statsBar').textContent = '';
+    return;
+  }
+
+  // sort
+  let sorted = [...data];
+  if(sortCol>=0){
+    const idx = sortCol===0?1 : sortCol===1?2 : sortCol;
+    sorted.sort((a,b) => {
+      let va = (idx<7 ? a[idx] : a[0]);
+      let vb = (idx<7 ? b[idx] : b[0]);
+      // numeric attempt
+      const na = parseFloat(va.replace(/[^0-9.]/g,''));
+      const nb = parseFloat(vb.replace(/[^0-9.]/g,''));
+      if(!isNaN(na) && !isNaN(nb)) return sortAsc ? na-nb : nb-na;
+      return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+  }
+
+  const qBadge = q => ({
+    '完整':'<span class="quality-badge full">完整</span>',
+    '部分缺失':'<span class="quality-badge partial">部分</span>',
+    '数据有限':'<span class="quality-badge limited">有限</span>'
+  })[q]||q;
+
+  document.getElementById('statsBar').textContent = `显示 ${sorted.length} / ${summaryData.length} 个国家`;
+
+  tbody.innerHTML = sorted.map(r => {
+    const region = r[0], country = r[1], currency = r[2];
+    const prices = r.slice(3,8).map((p,i) =>
+      p==='—' ? `<span class="price missing">—</span>`
+        : `<span class="price" style="color:${i===chartModel?MODEL_COLORS[i]:'inherit'}">${p}</span>`
+    ).join('</td><td>');
+    return `<tr>
+      <td><span class="region-badge">${region}</span> ${country}</td>
+      <td>${currency}</td>
+      <td>${prices}</td>
+      <td style="font-size:12px;color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;">${r[8]}</td>
+      <td>${qBadge(r[9])}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderChartModelChips(){
+  const el = document.getElementById('chartModelChips');
+  if(!el) return;
+  el.innerHTML = MODEL_KEYS.map((m,i) =>
+    `<div class="model-chip${chartModel===i?' active':''}" data-chart-model="${i}">${m.replace('Redmi Note 15','Note 15')}</div>`
+  ).join('');
+}
+
+function renderBarChart(){
+  const el = document.getElementById('barChart');
+  const hint = document.getElementById('chartHint');
+  const modelName = MODEL_KEYS[chartModel];
+  hint.innerHTML = `📊 <strong>${modelName}</strong> 各国价格对比 (折合 USD) — 选择型号查看`;
+
+  // Use USD from detailData
+  const items = [];
+  const seen = new Set();
+  for(const r of summaryData){
+    const country = r[1];
+    if(seen.has(country)) continue;
+    const usdInfo = getUsdPrice(country, modelName);
+    if(!usdInfo) continue;
+    seen.add(country);
+    items.push({
+      country,
+      region: r[0],
+      usd: usdInfo.usd,
+      local: usdInfo.local,
+      currency: usdInfo.currency,
+      config: usdInfo.config,
+      usdDisplay: usdInfo.usdDisplay
+    });
+  }
+  if(items.length===0){
+    el.innerHTML = '<div class="empty-state">该型号暂无跨国家可比数据</div>';
+    return;
+  }
+  items.sort((a,b) => b.usd - a.usd);
+  const maxVal = items[0].usd;
+
+  el.innerHTML = items.map(item => {
+    const pct = Math.max(3, (item.usd / maxVal) * 100);
+    const color = MODEL_COLORS[chartModel];
+    return `<div class="bar-row">
+      <div class="bar-label">${item.country}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="bar-value">$${item.usdDisplay} <span style="font-size:11px;color:var(--text2);">${item.currency} ${item.local}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderCompTable(){
+  const thead = qs('#compTable thead');
+  const tbody = qs('#compTable tbody');
+  thead.innerHTML = `<tr>
+    <th>地区</th><th>国家</th><th>竞品</th><th>竞品配置</th><th>竞品当地价</th><th>竞品≈USD</th>
+    <th>我方型号</th><th>我方配置</th><th>我方当地价</th><th>我方≈USD</th><th>价差</th>
+  </tr>`;
+  tbody.innerHTML = compData.map(r => {
+    const diff = r[10];
+    const diffColor = diff.startsWith('-')?' style="color:var(--green);font-weight:600;"'
+      : diff.startsWith('+')?' style="color:var(--red);font-weight:600;"'
+      : diff==='持平'||diff.includes('基本')?' style="color:var(--text2);"'
+      : '';
+    return `<tr>
+      <td><span class="region-badge">${r[0]}</span></td>
+      <td>${r[1]}</td>
+      <td>${r[2]}</td>
+      <td style="color:var(--text2);font-size:12px;">${r[3]}</td>
+      <td>${r[4]}</td>
+      <td style="font-size:12px;color:var(--text2);">${r[5]}</td>
+      <td>${r[6]}</td>
+      <td style="color:var(--text2);font-size:12px;">${r[7]}</td>
+      <td>${r[8]}</td>
+      <td style="font-size:12px;color:var(--text2);">${r[9]}</td>
+      <td${diffColor}>${diff}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== HISTORY / TREND =====
+let priceHistory = [];
+let historyRegion = '全部';
+// Build country→region map from summaryData
+const historyRegionMap = {};
+summaryData.forEach(r => { historyRegionMap[r[1]] = r[0]; });
+
+// Predefined region order for history tabs (matching regions_and_countries.md)
+const HISTORY_REGIONS = ['全部','拉美','独联体','西欧','东北欧','东南亚','中东','印尼','东亚','非洲'];
+
+function renderHistoryRegionTabs() {
+  const el = document.getElementById('historyRegionTabs');
+  if(!el) return;
+  el.innerHTML = HISTORY_REGIONS.map(r =>
+    `<div class="region-tab${r===historyRegion?' active':''}" data-history-region="${r}">${r}</div>`
+  ).join('');
+}
+
+function getHistoryCountriesByRegion() {
+  if(historyRegion === '全部') {
+    return [...new Set(priceHistory.flatMap(s => s.entries.map(e => e[0])))].sort();
+  }
+  // Get countries in this region
+  const regionCountries = summaryData.filter(r => r[0] === historyRegion).map(r => r[1]);
+  // Filter by entries that exist in history
+  const allCountries = [...new Set(priceHistory.flatMap(s => s.entries.map(e => e[0])))];
+  return allCountries.filter(c => regionCountries.includes(c)).sort();
+}
+
+function buildInitialSnapshot() {
+  const entries = detailData.map(r => [r[0], r[1], r[2], r[3], r[4]]);
+  const countries = [...new Set(entries.map(e => e[0]))].length;
+  return { date: '2026-07-09', label: 'v1 初始采集', note: `${countries}国，覆盖全部型号`, entries };
+}
+
+function initHistory() {
+  priceHistory = [buildInitialSnapshot()];
+  document.getElementById('historyBadge').textContent = priceHistory.length;
+  renderHistoryRegionTabs();
+  populateHistorySelects();
+  renderHistoryTable();
+}
+
+function populateHistorySelects() {
+  const countries = getHistoryCountriesByRegion();
+  const models = [...new Set(priceHistory.flatMap(s => s.entries.map(e => e[1])))];
+  document.getElementById('historyCountry').innerHTML =
+    '<option value="">选择国家</option>' + countries.map(c => `<option value="${c}">${c}</option>`).join('');
+  document.getElementById('historyModel').innerHTML =
+    '<option value="">选择型号</option>' + models.map(m => `<option value="${m}">${m}</option>`).join('');
+}
+
+function renderHistoryTable() {
+  const tbody = document.querySelector('#historyTable tbody');
+  tbody.innerHTML = priceHistory.map(s => {
+    const n = [...new Set(s.entries.map(e => e[0]))].length;
+    return `<tr><td><strong>${s.date}</strong></td><td>${s.label}</td>
+      <td style="color:var(--text2);font-size:12px;">${s.note}</td><td>${n}</td></tr>`;
+  }).join('');
+  document.getElementById('historySnapshotsCount').textContent = `共 ${priceHistory.length} 个快照 · 选择国家+型号查看趋势`;
+}
+
+function renderHistoryChart() {
+  const country = document.getElementById('historyCountry').value;
+  const model = document.getElementById('historyModel').value;
+  const container = document.getElementById('trendChartContainer');
+  const empty = document.getElementById('trendEmpty');
+  if (!country || !model) { container.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  const points = [];
+  for (const s of priceHistory) {
+    const e = s.entries.find(x => x[0]===country && x[1]===model);
+    if (e) {
+      const v = parseFloat((e[4].match(/[\d.]+/)||['0'])[0]);
+      if (!isNaN(v) && v > 0) points.push({ date: s.date, usd: v, local: e[3] });
+    }
+  }
+  if (points.length === 0) {
+    container.innerHTML = `<div class="empty-state">${country} · ${model} 暂无价格数据</div>`;
+    return;
+  }
+
+  // Single point: show current value + hint
+  if (points.length === 1) {
+    const p = points[0];
+    container.innerHTML = `<div class="trend-single">
+      <div class="big-price">~$${p.usd}</div>
+      <div class="meta">${country} · ${model} · 折合 USD</div>
+      <div style="color:var(--text2);font-size:12px;margin-top:4px;">当地: ${p.local} · 快照: ${p.date}</div>
+      <div class="hint">📈 后续添加更多数据快照后将自动显示价格趋势线<br>计划更新频率: 每周/每两周一次</div>
+    </div>`;
+    return;
+  }
+
+  // Multi-point: SVG line chart
+  const W = 800, H = 300, pad = { top: 20, bottom: 35, left: 55, right: 20 };
+  const cw = W - pad.left - pad.right, ch = H - pad.top - pad.bottom;
+  const vals = points.map(p => p.usd);
+  const minV = Math.min(...vals) * 0.95, maxV = Math.max(...vals) * 1.05, range = maxV - minV || 1;
+  const xStep = cw / Math.max(points.length - 1, 1);
+  const sx = i => pad.left + i * xStep;
+  const sy = v => pad.top + ch - ((v - minV) / range) * ch;
+
+  const pathD = points.map((p, i) => `${i===0?'M':'L'}${sx(i)},${sy(p.usd)}`).join(' ');
+  const dots = points.map((p, i) =>
+    `<circle cx="${sx(i)}" cy="${sy(p.usd)}" r="4" fill="#2563eb" stroke="#fff" stroke-width="2"/>`
+  ).join('');
+  const labels = points.map((p, i) =>
+    `<text x="${sx(i)}" y="${sy(p.usd)-10}" text-anchor="middle" font-size="11" fill="#2563eb" font-weight="600">$${p.usd}</text>` +
+    `<text x="${sx(i)}" y="${H-8}" text-anchor="middle" font-size="11" fill="#94a3b8">${p.date.slice(5)}</text>`
+  ).join('');
+  const yLabels = [];
+  for (let i = 0; i <= 5; i++) {
+    const v = minV + range * i / 5, y = sy(v);
+    yLabels.push(`<text x="${pad.left-8}" y="${y+4}" text-anchor="end" font-size="11" fill="#94a3b8">$${Math.round(v)}</text>`);
+    if (i > 0 && i < 5) yLabels.push(`<line x1="${pad.left}" y1="${y}" x2="${W-pad.right}" y2="${y}" stroke="#e4e6eb" stroke-dasharray="4,4" opacity="0.5"/>`);
+  }
+  const isDark = document.body.classList.contains('dark');
+  const axisColor = isDark ? '#475569' : '#e4e6eb';
+  container.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;">
+    <rect x="${pad.left}" y="0" width="${cw}" height="${ch+pad.top}" fill="transparent"/>
+    ${yLabels.join('')}
+    <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top+ch}" stroke="${axisColor}" stroke-width="1"/>
+    <line x1="${pad.left}" y1="${pad.top+ch}" x2="${W-pad.right}" y2="${pad.top+ch}" stroke="${axisColor}" stroke-width="1"/>
+    <path d="${pathD}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${labels}
+    ${dots}
+  </svg>`;
+}
+
+// ===== SECTION SWITCHING =====
+function switchSection(section) {
+  document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section-tab').forEach(t => {
+    const text = t.textContent.trim();
+    if(section==='overview' && text.startsWith('价格')) t.classList.add('active');
+    if(section==='competitor' && text.startsWith('竞争')) t.classList.add('active');
+    if(section==='history' && text.startsWith('历史')) t.classList.add('active');
+  });
+  document.getElementById('overviewSection').style.display = section === 'overview' ? '' : 'none';
+  document.getElementById('competitorSection').style.display = section === 'competitor' ? '' : 'none';
+  document.getElementById('historySection').style.display = section === 'history' ? '' : 'none';
+  if(section==='competitor'){ renderCompRegionTabs(); renderCompProductChips(); renderCompBrandChips(); renderCompMapping(); }
+}
+
+// ===== ACTIONS =====
+function setRegion(r){
+  regionFilter = r;
+  qsa('.region-tab').forEach(t => t.classList.toggle('active', t.textContent===r));
+  renderTable();
+  renderBarChart();
+}
+function setModelFilter(idx){
+  modelFilter = idx;
+  qsa('.model-chip').forEach(c => c.classList.toggle('active', parseInt(c.dataset.idx||'-1')===idx));
+  renderTable();
+}
+function filterData(){
+  searchQuery = document.getElementById('searchInput').value.trim();
+  renderTable();
+}
+function sortTable(col){
+  if(sortCol===col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = true; }
+  renderTable();
+}
+function toggleTheme(){
+  document.body.classList.toggle('dark');
+  renderHistoryChart(); // refresh SVG axis colors
+}
+function setChartModel(idx){
+  chartModel = idx;
+  renderChartModelChips();
+  renderBarChart();
+  renderTable();
+}
+function setCompRegion(r){
+  compRegion = r;
+  renderCompRegionTabs();
+  renderCompMapping();
+}
+function setHistoryRegion(r){
+  historyRegion = r;
+  renderHistoryRegionTabs();
+  populateHistorySelects();
+  document.getElementById('trendChartContainer').innerHTML = '';
+  document.getElementById('trendEmpty').style.display = 'block';
+  document.getElementById('historyCountry').value = '';
+  document.getElementById('historyModel').value = '';
+}
+
+// ===== INIT =====
+renderKPI();
+renderRegionTabs();
+renderModelChips();
+renderChartModelChips();
+renderTable();
+renderBarChart();
+renderCompTable();
+initHistory();
+renderCompRegionTabs();
+renderCompProductChips();
+renderCompBrandChips();
+renderCompMapping();
+
+// Chart model selector
+document.getElementById('chartModelChips').addEventListener('click', e => {
+  const chip = e.target.closest('.model-chip');
+  if(!chip) return;
+  const idx = parseInt(chip.dataset.chartModel);
+  if(!isNaN(idx)) { setChartModel(idx); }
+});
+
+// Competitor product & brand selector
+document.addEventListener('click', e => {
+  const prodChip = e.target.closest('[data-comp-prod]');
+  if(prodChip) {
+    compProduct = prodChip.dataset.compProd;
+    compBrand = '';
+    renderCompProductChips();
+    renderCompBrandChips();
+    renderCompMapping();
+    return;
+  }
+  const brandChip = e.target.closest('[data-comp-brand]');
+  if(brandChip) {
+    compBrand = brandChip.dataset.compBrand || '';
+    renderCompBrandChips();
+    renderCompMapping();
+    return;
+  }
+  const compRegChip = e.target.closest('[data-comp-region]');
+  if(compRegChip) {
+    setCompRegion(compRegChip.dataset.compRegion);
+    return;
+  }
+  const histRegChip = e.target.closest('[data-history-region]');
+  if(histRegChip) {
+    setHistoryRegion(histRegChip.dataset.historyRegion);
+    return;
+  }
+});
+</script>
+</body>
+</html>
