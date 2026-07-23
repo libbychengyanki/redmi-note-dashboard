@@ -60,11 +60,12 @@
   /* Controls */
   .controls { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
   .controls .search-wrap { flex:1; min-width:200px; }
-  .controls .search-wrap input {
+  .controls .search-wrap input, .controls .search-wrap select {
     width:100%; padding:8px 14px; border:1px solid var(--border); border-radius:var(--radius-sm);
     background:var(--surface); color:var(--text); font-size:14px; outline:none;
   }
-  .controls .search-wrap input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.15); }
+  .controls .search-wrap input:focus, .controls .search-wrap select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.15); }
+  .controls .search-wrap select { cursor:pointer; appearance:auto; }
   .region-tabs { display:flex; gap:4px; flex-wrap:wrap; }
   .region-tab {
     padding:6px 14px; border-radius:20px; border:1px solid var(--border); background:var(--surface);
@@ -111,16 +112,6 @@
   .chart-section { margin-top:24px; }
   .chart-section h2 { font-size:18px; margin-bottom:12px; }
   .chart-card { background:var(--surface); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); }
-  .chart-card .chart-hint { font-size:13px; color:var(--text2); margin-bottom:16px; }
-  .bar-chart { display:flex; flex-direction:column; gap:6px; }
-  .bar-row { display:grid; grid-template-columns:120px 1fr 80px; align-items:center; gap:12px; }
-  .bar-row .bar-label { font-size:13px; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text2); }
-  .bar-row .bar-track { height:24px; background:var(--surface2); border-radius:6px; overflow:hidden; position:relative; }
-  .bar-row .bar-fill {
-    height:100%; border-radius:6px; transition:width .6s ease;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-  }
-  .bar-row .bar-value { font-size:13px; font-weight:600; }
 
   /* Competition */
   .comp-section { margin-top:24px; }
@@ -134,8 +125,6 @@
     body { padding:12px; }
     .header h1 { font-size:18px; }
     .kpi-row { grid-template-columns:repeat(2,1fr); }
-    .bar-row { grid-template-columns:80px 1fr 60px; gap:8px; }
-    .bar-row .bar-label { font-size:11px; }
   }
 
   /* Animations */
@@ -172,7 +161,7 @@
   .collapse-toggle .arrow { transition:transform .2s; display:inline-block; font-size:10px; }
   .collapse-toggle .arrow.open { transform:rotate(90deg); }
   .collapse-body { overflow:hidden; transition:max-height .3s ease; max-height:0; }
-  .collapse-body.open { max-height:2000px; }
+  .collapse-body.open { max-height:100000px; }
 
   /* Filter group: chip + search combo */
   .filter-group { display:flex; flex-direction:column; gap:3px; min-width:140px; }
@@ -227,6 +216,7 @@
   <div class="section-tabs">
     <div class="section-tab active" onclick="switchSection('overview')">📋 价格总览</div>
     <div class="section-tab" onclick="switchSection('competitor')">🏷️ 竞品价格 <span class="badge" id="compTotalBadge">43</span></div>
+    <div class="section-tab" onclick="switchSection('productComp')">📊 产品对标 <span class="badge" id="pcBadge">0</span></div>
     <div class="section-tab" onclick="switchSection('history')">📈 历史趋势 <span class="badge" id="historyBadge">1</span></div>
   </div>
 
@@ -234,22 +224,18 @@
   <div id="overviewSection">
   <div class="controls">
     <div class="region-tabs" id="regionTabs"></div>
-    <div class="search-wrap"><input id="searchInput" placeholder="搜索国家..." oninput="filterData()"></div>
+    <div class="search-wrap"><select id="countrySelect" onchange="filterData()"><option value="">🌍 全部国家</option></select></div>
   </div>
 
   <div class="model-chips" id="modelChips"></div>
   <div class="stats-bar" id="statsBar"></div>
 
+  <h2 style="font-size:16px;margin:20px 0 10px;">📋 Xiaomi Redmi Note 15 系列价格总览</h2>
   <div class="table-wrap"><table id="mainTable"><thead></thead><tbody></tbody></table></div>
 
-  <div class="chart-section">
-    <h2>📊 型号价格跨国对比</h2>
-    <div class="chart-card">
-      <div class="chart-hint" id="chartHint">📊 <strong>${modelName}</strong> 各国价格对比 (折合 USD)</div>
-      <div class="model-chips" id="chartModelChips" style="margin-bottom:16px;"></div>
-      <div class="bar-chart" id="barChart"></div>
-    </div>
-  </div>
+  <h2 style="font-size:16px;margin:20px 0 10px;">📱 Samsung 竞品价格参考（按品类）</h2>
+  <div class="table-wrap"><table id="samsungTable"><thead></thead><tbody></tbody></table></div>
+
   </div>
 
   <!-- Competitor Section -->
@@ -307,6 +293,32 @@
     </div>
   </div>
 
+  <!-- Product-Comp Section -->
+  <div id="productCompSection" style="display:none;">
+    <div class="controls" style="margin-bottom:8px;">
+      <div class="region-tabs" id="pcRegionTabs"></div>
+    </div>
+    <div class="comp-filters" style="margin-bottom:8px;gap:6px;">
+      <div class="filter-group" style="flex:1;">
+        <label>竞品品牌</label>
+        <div class="filter-chips" id="pcBrandChips"></div>
+      </div>
+      <div class="filter-group" style="flex:1;">
+        <label>竞品型号</label>
+        <input class="filter-search" id="pcCompSearch" placeholder="搜索..." oninput="filterPcChips('comp')">
+        <div class="filter-chips" id="pcCompChips" style="max-height:100px;"></div>
+      </div>
+      <div class="filter-group" style="flex:1;">
+        <label>国家</label>
+        <input class="filter-search" id="pcCountrySearch" placeholder="搜索..." oninput="filterPcChips('country')">
+        <div class="filter-chips" id="pcCountryChips" style="max-height:100px;"></div>
+      </div>
+      <span class="stat" id="pcFilterStat"></span>
+    </div>
+    <div class="stats-bar" id="pcStatsBar" style="margin-bottom:12px;"></div>
+    <div id="productCompContainer"></div>
+  </div>
+
   <!-- History Section -->
   <div id="historySection" style="display:none;">
     <div class="region-tabs" id="historyRegionTabs" style="margin-bottom:8px;"></div>
@@ -339,7 +351,13 @@
   </div>
 
   <div class="footer">
-    数据来源: 各国指定零售渠道官网 &middot; 采集日期: 2026-07-09 &middot; 汇率按当日市场汇率估算
+    <div class="collapse-toggle" onclick="toggleCollapse(this)" style="margin-bottom:8px;font-size:13px;color:var(--text2);cursor:pointer;display:inline-block;">
+      <span class="arrow">▶</span> 汇率参考（点击展开/折叠）
+    </div>
+    <div class="collapse-body" style="margin-bottom:12px;">
+      <div id="exchangeRatePanel" style="font-size:12px;color:var(--text2);"></div>
+    </div>
+    数据来源: 各国指定零售渠道官网 &middot; 采集日期: 2026-07-22（东南亚官方渠道刷新） &middot; 汇率按当日市场汇率估算
   </div>
 </div>
 
@@ -349,59 +367,274 @@ const REGIONS = ['全部','拉美','独联体','西欧','东北欧','东南亚',
 const MODEL_KEYS = ['Redmi Note 15','Redmi Note 15 5G','Redmi Note 15 Pro','Redmi Note 15 Pro 5G','Redmi Note 15 Pro+ 5G'];
 const MODEL_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6'];
 
+// ===== 源页面 URL 映射（价格点击跳转）=====
+const SOURCE_URLS = {
+  "印尼": {
+    "Samsung A57 5G": "https://erafone.com/produk/samsung-galaxy-a57-5g",
+    "Samsung A56 5G": "https://erafone.com/produk/samsung-galaxy-a56-5g",
+    "Samsung A37 5G": "https://erafone.com/produk/samsung-galaxy-a37-5g",
+    "Samsung A36 5G": "https://erafone.com/produk/samsung-galaxy-a36-5g",
+    "Samsung A17 5G": "https://erafone.com/produk/samsung-galaxy-a17-5g",
+    "Samsung A17 LTE": "https://erafone.com/produk/samsung-galaxy-a17",
+    "OPPO Reno16 F 5G": "https://erafone.com/produk/oppo-reno16-f",
+    "OPPO Reno15 F": "https://erafone.com/produk/oppo-reno15-f",
+    "Note 15 Pro+ 5G": "https://erafone.com/produk/xiaomi-redmi-note-15-pro-plus-5g",
+    "Note 15 Pro 5G": "https://erafone.com/produk/xiaomi-redmi-note-15-pro-5g",
+    "Note 15 5G": "https://erafone.com/produk/xiaomi-redmi-note-15-5g",
+    "Note 15": "https://erafone.com/produk/xiaomi-redmi-note-15"
+  },
+  "香港": {
+    "Note 15": "https://www.fortress.com.hk/zh-hk/product/note-15-%E6%99%BA%E8%83%BD%E6%89%8B%E6%A9%9F/p/BP_14048347?variant=14048435",
+    "Note 15 5G": "https://www.fortress.com.hk/zh-hk/product/note-15-5g-%E6%99%BA%E8%83%BD%E6%89%8B%E6%A9%9F/p/BP_14048321?variant=14048486",
+    "Note 15 Pro 5G": "https://www.fortress.com.hk/zh-hk/product/note-15-pro-%E6%99%BA%E8%83%BD%E6%89%8B%E6%A9%9F/p/BP_14048363?variant=14048478",
+    "Note 15 Pro+ 5G": "https://www.fortress.com.hk/zh-hk/product/note-15-pro-%E6%99%BA%E8%83%BD%E6%89%8B%E6%A9%9F/p/BP_14048339?variant=14048507",
+    "Samsung A57": "https://www.fortress.com.hk/zh-hk/product/galaxy-a57-%E6%99%BA%E8%83%BD%E6%89%8B%E6%A9%9F/p/BP_14087160?variant=14087223",
+    "Samsung A37": "https://www.fortress.com.hk/zh-hk/product/galaxy-a37-%E6%99%BA%E8%83%BD%E6%89%8B%E6%A9%9F/p/BP_14087151?variant=14087282",
+    "Samsung A27": "https://www.fortress.com.hk/zh-hk/product/galaxy-a27-%E6%99%BA%E8%83%BD%E6%89%8B%E6%A9%9F/p/BP_14133349?variant=14133349",
+    "Samsung A17 5G": "https://www.fortress.com.hk/zh-hk/product/galaxy-a17-%E6%99%BA%E8%83%BD%E6%89%8B%E6%A9%9F/p/BP_13978198?variant=13978420",
+    "OPPO Reno 15F": "https://www.fortress.com.hk/zh-hk/product/reno15f-%E6%99%BA%E8%83%BD%E6%89%8B%E6%A9%9F/p/14053921",
+    "OPPO A6 Pro 5G": "https://www.fortress.com.hk/zh-hk/product/a6-pro-5g-%E6%99%BA%E8%83%BD%E6%89%8B%E6%A9%9F/p/14027538",
+    "Honor 400": "https://www.fortress.com.hk/zh-hk/product/400-%E6%99%BA%E8%83%BD%E6%89%8B%E6%A9%9F/p/BP_13920421?variant=13920421",
+    "Honor 600": "https://www.fortress.com.hk/zh-hk/product/600-%E6%99%BA%E8%83%BD%E6%89%8B%E6%A9%9F/p/BP_14100125?variant=14100133",
+    "Honor 600 Lite": "https://www.fortress.com.hk/zh-hk/product/600-lite-%E6%99%BA%E8%83%BD%E6%89%8B%E6%A9%9F/p/14100221",
+    "Honor X9d": "https://www.fortress.com.hk/zh-hk/product/x9d-%E6%99%BA%E8%83%BD%E6%89%8B%E6%A9%9F/p/14007756"
+  },
+  "马来西亚": {
+    "Samsung A36 5G": "https://www.samsung.com/my/smartphones/galaxy-a/galaxy-a36-5g-awesome-black-128gb-sm-a366bzkqxme/buy/",
+    "Samsung A17 5G": "https://www.samsung.com/my/smartphones/galaxy-a/galaxy-a17-5g-black-256gb-sm-a176bzkkxme/buy/",
+    "Samsung A17 4G": "https://www.samsung.com/my/smartphones/galaxy-a/galaxy-a17-black-256gb-sm-a175fzkoxme/buy/",
+    "OPPO Reno 15F 5G": "https://www.oppo.com/my/product/oppo-reno15-f-5g.P.P1100524"
+  },
+  "菲律宾": {
+    "Samsung A37 5G": "https://www.samsung.com/ph/smartphones/galaxy-a37/buy/",
+  },
+  "越南": {
+    "Samsung A57 5G": "https://www.samsung.com/vn/smartphones/galaxy-a57/buy/",
+    "Samsung A37 5G": "https://www.samsung.com/vn/smartphones/galaxy-a37/buy/"
+  },
+  "泰国": {
+    "Samsung A57 5G": "https://www.bnn.in.th/th/p/smartphone-and-accessories/smartphone/samsung-smartphone/samsung-smartphone-galaxy-a57-12256-gray-5g-8806099048501_d89y5q",
+    "Samsung A56 5G": "https://www.bnn.in.th/th/p/smartphone-and-accessories/smartphone/samsung-smartphone/samsung-smartphone-galaxy-a56-12256gb-black-5g-8806097054252_z96p5e",
+    "Samsung A37 5G": "https://www.bnn.in.th/th/p/samsung-smartphone-galaxy-a37-8256-gray-5g-8806099058159_dm543x",
+    "Samsung A36 5G": "https://www.bnn.in.th/th/p/samsung-smartphone-galaxy-a36-8128gb-light-violet-5g-8806097059325_dleg9m",
+    "Samsung A26 5G": "https://www.bnn.in.th/th/en/p/smartphone-and-accessories/smartphone/samsung-smartphone/samsung-smartphone-galaxy-a26-8256-gb-light-green-5g-8806097098270_zgk50v",
+    "Samsung A17 5G": "https://www.bnn.in.th/th/p/smartphone-and-accessories/smartphone/samsung-smartphone/samsung-smartphone-galaxy-a17-8128gb-blue-5g-8806097668411_zv4lpn",
+    "Note 15 Pro+ 5G": "https://www.bnn.in.th/th/p/smartphone-and-accessories/smartphone/xiaomi-smartphone/xiaomi-smartphone-redmi-note-15-pro-12512-black-5g-6932554468026_d12o3y",
+    "Note 15 Pro 5G": "https://www.bnn.in.th/th/p/smartphone-and-accessories/smartphone/xiaomi-smartphone/xiaomi-smartphone-redmi-note-15-pro-8256-titanium-5g-6932554470029_zv492x",
+    "Note 15 5G": "https://www.bnn.in.th/th/p/smartphone-and-accessories/smartphone/xiaomi-smartphone/xiaomi-smartphone-redmi-note-15-8256-black-5g-6932554469528_zgevn9",
+    "OPPO Reno 15F 5G": "https://www.bnn.in.th/th/p/smartphone-and-accessories/smartphone/oppo-smartphone/oppo-smartphone-reno15f-8256-afterglow-pink-5g-6932169393591_d89kpq",
+    "OPPO Reno 14F 5G": "https://www.bnn.in.th/en/p/smartphone-and-accessories/smartphone/oppo-smartphone/oppo-smartphone-reno14f-glossy-pink-12256-5g-5106250038pk_dyjewv",
+    "OPPO A6 Pro 5G": "https://www.bnn.in.th/th/p/smartphone-and-accessories/smartphone/oppo-smartphone/oppo-smartphone-a6-pro-8256-coral-pink-5g-6932169381475_d89qol",
+    "OPPO A6 5G": "https://www.bnn.in.th/th/p/oppo-smartphone-a6-6128-sakura-pink-5g-6932169393997_z9m231",
+    "vivo V60 Lite 5G": "https://www.bnn.in.th/th/p/vivo-smartphone-v60-lite-8256gb-titanium-blue-5g-f-6935117899435_d5o2jx",
+    "OPPO A6 4G": "https://www.bnn.in.th/en/p/oppo-smartphone-a6-6128-aurora-gold-6932169395946_dk73m3",
+    "OPPO A5 4G": "https://www.bnn.in.th/th/p/oppo-smartphone-a5-6128-mist-white-5107250042wh_dm5gov"
+  },
+  "智利": {
+    "Samsung A57 5G": "https://miportal.entel.cl/personas/celulares/galaxy-a57-5g/prod2710094",
+    "Samsung A56 5G": "https://miportal.entel.cl/personas/celulares/galaxy-a56-5g/prod2500080",
+    "Samsung A37 5G": "https://miportal.entel.cl/personas/celulares/galaxy-a37-5g/prod2710095",
+    "Samsung A17 5G": "https://miportal.entel.cl/personas/celulares/galaxy-a17-5g/prod2640057",
+    "Honor Magic 8 Lite": "https://miportal.entel.cl/personas/celulares/honor-magic-8-lite-512gb/prod2680065",
+    "Honor 600": "https://miportal.entel.cl/personas/celulares/honor-600-512gb-clip-2-pro/prod2750057",
+    "Note 15 Pro+ 5G": "https://simple.ripley.cl/xiaomi-redmi-note-15-pro-5g-8gb-256gb-negro-mpm10003235596",
+    "Note 15 Pro 5G": "https://simple.ripley.cl/xiaomi-redmi-note-15-pro-256gb-8gb-ram-5g-negro-mpm10003142423",
+    "Note 15 5G": "https://simple.ripley.cl/xiaomi-redmi-note-15-5g-8gb-ram-256gb-black-mpm10003407747"
+  },
+  "哥伦比亚": {
+    "Samsung A57 5G": "https://www.alkosto.com/celular-samsung-galaxy-a57-256gb-5g-azul-oscuro/p/8806099057299",
+    "Samsung A56 5G": "https://www.alkosto.com/celular-samsung-galaxy-a56-256gb-5g-negro/p/8806097117117",
+    "Samsung A37 5G": "https://www.alkosto.com/celular-samsung-galaxy-a37-256gb-5g-verde-oscuro/p/8806099056407",
+    "Samsung A36 5G": "https://www.alkosto.com/celular-samsung-galaxy-a36-256gb-5g-negro-cargador/p/8806097477358",
+    "Samsung A26 5G": "https://www.alkosto.com/celular-samsung-galaxy-a26-256gb-5g-verde-claro/p/8806097113362",
+    "Samsung A27 5G": "https://www.alkosto.com/celular-samsung-galaxy-a27-256gb-5g-verde-claro/p/8806097114161",
+    "Samsung A17 5G": "https://www.alkosto.com/celular-samsung-galaxy-a17-256gb-5g-negro/p/8806097667735",
+    "Honor Magic 8 Lite": "https://www.alkosto.com/celular-honor-magic-8-lite-512gb-5g-negro-reloj/p/7709554651722",
+    "Honor Magic 7 Lite": "https://www.alkosto.com/celular-honor-magic-7-lite-512gb-5g-purpura-reloj/p/7707945527946",
+    "OPPO Reno 14F": "https://www.alkosto.com/celular-oppo-reno-14f-256gb-5g-azul-parlante/p/7708334730954",
+    "Note 15 Pro+ 5G": "https://www.alkosto.com/celular-redmi-note-15-pro-512gb-5g-azul-power-bank-165w/p/6932554490096",
+    "Note 15 Pro 5G": "https://www.alkosto.com/celular-redmi-note-15-pro-256gb-5g-titanium-power-bank/p/6932554471279",
+    "Note 15 Pro": "https://www.alkosto.com/celular-redmi-note-15-pro-256gb-4g-negro/p/6932554469764",
+    "Note 15 5G": "https://www.alkosto.com/celular-redmi-note-15-256gb-5g-morado/p/6932554469566",
+    "Note 15": "https://www.alkosto.com/celular-redmi-note-15-512gb-4g-negro/p/6932554476083"
+  },
+  "秘鲁": {
+    "Samsung A57 5G": "https://www.oechsle.pe/samsung-galaxy-a57-5g-256gb-8gb-awesome-navy-1001788302/p",
+    "Samsung A56 5G": "https://www.oechsle.pe/samsung-galaxy-a56-5g-8ram-256gb-negro-1001595503/p",
+    "Samsung A36 5G": "https://www.oechsle.pe/samsung-galaxy-a36-5g-8ram-256gb-lila-1001595544/p",
+    "Samsung A37 5G": "https://www.oechsle.pe/smartphone-samsung-galaxy-a37-5g-256gb-gray-3081275/p",
+    "Samsung A26 5G": "https://www.oechsle.pe/celular-galaxy-a26-5g-8ram-256gb-1001696177/p",
+    "Honor Magic 8 Lite": "https://www.oechsle.pe/honor-magic-8-lite-256gb-8gb-ram-midnight-black-1001593749/p",
+    "Honor Magic 7 Lite": "https://www.oechsle.pe/honor-magic-7-lite-8ram-512gb-verde--1001787730/p",
+    "Honor 600": "https://www.oechsle.pe/honor-600-5g-8ram-256gb-naranja-1001832444/p",
+    "Honor 600 Lite": "https://www.oechsle.pe/honor-600e--256gb-8ram--honor-choice-earbuds-x7-lite-1001853904/p",
+    "Honor 600 Pro": "https://www.oechsle.pe/celular-honor-600-pro-12gb---512gb-golden---choice-watch-2i-3114697/p",
+    "Honor X8c": "https://www.oechsle.pe/celular-honor-x8c-8ram-256gb--1001652608/p",
+    "Honor X8d": "https://www.oechsle.pe/honor-x8d-8ram-256gb-azul--1001843142/p",
+    "OPPO Reno 14F 5G": "https://www.oechsle.pe/oppo-reno-14f-5g-256gb-12gb-verde-1001524353/p",
+    "Note 15 Pro+ 5G": "https://www.oechsle.pe/xiaomi-redmi-note-15-pro-plus-5g-12gb-512gb-gray-1001762167/p",
+    "Note 15 Pro 5G": "https://www.oechsle.pe/xiaomi-redmi-note-15-pro-5g-256gb-8gb-gris-1001759326/p",
+    "Note 15 Pro": "https://www.oechsle.pe/celular-redmi-note-15-pro-black-8g-ram-256g-rom-3046989/p",
+    "Note 15": "https://www.oechsle.pe/celular-redmi-note-15-black-8g-ram-256g-rom-3046992/p",
+    "Note 15 5G": "https://www.oechsle.pe/xiaomi-redmi-note-15-5g-256gb-8gb-black-1001766941/p"
+  },
+  "墨西哥": {
+    "Samsung A57 5G": "https://www.liverpool.com.mx/tienda/pdp/samsung-galaxy-a57-super-amoled-plus-6-7-pulgadas/1195303655?skuid=1195303688",
+    "Samsung A56 5G": "https://www.liverpool.com.mx/tienda/pdp/samsung-galaxy-a56-super-amoled-6-7-pulgadas/1173599021?skuid=1173599036",
+    "Samsung A37 5G": "https://www.liverpool.com.mx/tienda/pdp/samsung-galaxy-a37-super-amoled-6.7-pulgadas/1195439247?skuid=1195439253",
+    "Samsung A36 5G": "https://www.liverpool.com.mx/tienda/pdp/samsung-galaxy-a36-super-amoled-6.7-pulgadas-desbloqueado-reacondicionado/9993728899?skuid=1199343994",
+    "Honor Magic 7 Lite": "https://www.liverpool.com.mx/tienda/pdp/honor-magic7-lite-amoled-6.7-pulgadas/1170526244",
+    "Honor Magic 8 Lite": "https://www.liverpool.com.mx/tienda/pdp/honor-magic-8-lite-amoled-6.7-pulgadas/1189668600",
+    "OPPO Reno 14F": "https://www.liverpool.com.mx/tienda/pdp/oppo-reno14-f-amoled-6.57-pulgadas-telcel-nuevo/1184545216",
+    "Note 15 Pro+ 5G": "https://www.mi.com/mx/product/redmi-note-15-pro-plus-5g",
+    "Note 15 Pro 5G": "https://www.mi.com/mx/product/redmi-note-15-pro-5g",
+    "Note 15 Pro": "https://www.mi.com/mx/product/redmi-note-15-pro",
+    "Note 15": "https://www.mi.com/mx/product/redmi-note-15"
+  },
+  "西班牙": {
+    "Note 15 Pro+ 5G": "https://www.elcorteingles.es/electronica/A200383452-6932554481605-pr-xiaomi-redmi-note-15-pro-plus-5g-8gb-256-gb-movil-libre-mocca-256-gb-8-gb-ram/",
+    "Note 15 Pro 5G": "https://www.elcorteingles.es/electronica/A200383440-6932554470500-pr-xiaomi-redmi-note-15-pro-5g-8gb-256-gb-movil-libre-azul-glaciar-256-gb-8-gb-ram/",
+    "Note 15 Pro": "https://www.elcorteingles.es/electronica/A200383475-6932554480509-pr-xiaomi-redmi-note-15-pro-8gb-256-gb-movil-libre-titanio-256-gb-8-gb-ram/",
+    "Note 15": "https://www.elcorteingles.es/electronica/A200383481-6932554476236-pr-xiaomi-redmi-note-15-8gb-256-gb-movil-libre-negro-256-gb-8-gb-ram/",
+    "Note 15 5G": "https://www.elcorteingles.es/electronica/A200383466-6932554469252-pr-xiaomi-redmi-note-15-5g-8gb-256-gb-movil-libre-negro-256-gb-8-gb-ram/",
+    "Samsung A56 5G": "https://www.elcorteingles.es/electronica/A54746920-8806095982847-pr-samsung-galaxy-a56-5g-8gb-256gb-movil-libre-negro-256-gb-8-gb-ram/",
+    "Samsung A37 5G": "https://www.elcorteingles.es/electronica/A201414296-8806099035396-pr-samsung-galaxy-a37-69-exynos-1480-verde-oscuro-256-gb-8-gb-ram/",
+    "Samsung A36 5G": "https://www.elcorteingles.es/electronica/A54746894-8806095984124-pr-samsung-galaxy-a36-5g-6gb-128-gb-movil-libre-negro-128-gb-6-gb-ram/",
+    "Samsung A26 5G": "https://www.elcorteingles.es/electronica/A54746875-8806097072829-pr-samsung-galaxy-a26-5g-6gb-128gb-movil-libre-negro-128-gb-6-gb-ram/",
+    "Honor 400 Lite": "https://www.elcorteingles.es/electronica/A56762695-6936520865086-pr-honor-400-lite-8-gb-256-gb-movil-libre-verde-256-gb-8-gb-ram/",
+    "Samsung A57 5G": "https://www.elcorteingles.es/electronica/A200448969-8806099028275-pr-samsung-galaxy-a57-8gb-256gb-movil-libre-azul-oscuro-256-gb-8-gb-ram/"
+  },
+  "法国": {
+    "Note 15 Pro+ 5G": "https://www.fnac.com/Smartphone-Xiaomi-Redmi-Note-15-Pro-6-83-5G-Double-nano-SIM-512-Go-Bleu/a22479497/w-4",
+    "Note 15 Pro 5G": "https://www.fnac.com/Smartphone-Xiaomi-Redmi-Note-15-Pro-6-83-5G-Double-nano-SIM-256-Go-Gris-Titane/a22460439/w-4",
+    "Note 15 Pro": "https://www.fnac.com/Xiaomi-Redmi-Note-15-Pro-4G-smartphone-double-SIM-RAM-8-Go-Memoire-interne-256-Go-microSD-slot-ecran-OEL-6-77-2392-x-1080-pixels-120-Hz-2x-cameras-arriere-200-MP-8-MP-front-camera-32-MP-couleur-titane/a22460448/w-4",
+    "Note 15": "https://www.fnac.com/Smartphone-Xiaomi-Redmi-Note-15-6-77-Double-nano-SIM-256-Go-Bleu/a22479493/w-4",
+    "Note 15 5G": "https://www.fnac.com/Smartphone-Xiaomi-Redmi-Note-15-6-77-5G-Double-nano-SIM-256-Go-Noir/a22460447/w-4",
+    "Samsung A56 5G": "https://www.fnac.com/Smartphone-Samsung-Galaxy-A56-6-7-5G-Nano-SIM-256-Go-Gris/a21318588/w-4",
+    "Samsung A37 5G": "https://www.fnac.com/Smartphone-Samsung-Galaxy-A37-6-7-5G-Nano-SIM-128-Go-Lavande/a22745314/w-4",
+    "Samsung A36 5G": "https://www.fnac.com/Smartphone-Samsung-Galaxy-A36-6-7-5G-Nano-SIM-128-Go-Noir/a21318718/w-4",
+    "Samsung A26 5G": "https://www.fnac.com/Smartphone-Samsung-Galaxy-A26-6-7-5G-Nano-SIM-128-Go-Noir/a21318592/w-4",
+    "Honor Magic 8 Lite": "https://www.fnac.com/Pack-Smartphone-Honor-Magic8-Lite-6-79-5G-Double-nano-SIM-256-Go-Noir-minuit-Ecouteurs-Bluetooth-Honor-Choice-X7i-Blanc/a22803484/w-4",
+    "Honor 400 Lite": "https://www.fnac.com/Smartphone-Honor-400-Lite-6-7-5G-Double-Nano-SIM-256-Go-Velvet-Grey/a21465022/w-4",
+    "Honor 400 Smart": "https://www.fnac.com/Smartphone-Honor-400-Smart-6-77-Double-nano-SIM-128-Go-Velvet-Black/a21968437/w-4",
+    "Samsung A57 5G": "https://www.fnac.com/Smartphone-Samsung-Galaxy-A57-6-7-5G-Nano-SIM-256-Go-Gris/a22745317/w-4"
+  },
+  "德国": {
+    "Note 15 Pro+ 5G": "https://www.mediamarkt.de/de/product/_xiaomi-redmi-note-15-pro-5g-256-gb-black-3024409.html",
+    "Note 15 Pro 5G": "https://www.mediamarkt.de/de/product/_xiaomi-redmi-note-15-pro-5g-256-gb-black-3024402.html",
+    "Note 15 Pro": "https://www.mediamarkt.de/de/product/_xiaomi-redmi-note-15-pro-256-gb-black-3024398.html",
+    "Note 15": "https://www.mediamarkt.de/de/product/_xiaomi-redmi-note-15-128-gb-black-3024405.html",
+    "Note 15 5G": "https://www.mediamarkt.de/de/product/_xiaomi-redmi-note-15-5g-128-gb-black-3024403.html",
+    "Samsung A56 5G": "https://www.mediamarkt.de/de/product/_samsung-galaxy-a56-5g-128-gb-awesome-lightgray-dual-sim-2980041.html",
+    "Samsung A37 5G": "https://www.mediamarkt.de/de/product/_samsung-galaxy-a37-256-gb-awesome-charcoal-dual-sim-3039253.html",
+    "Samsung A36 5G": "https://www.mediamarkt.de/de/product/_samsung-galaxy-a36-5g-6128gb-white-128-gb-awesome-white-dual-sim-150876747.html",
+    "Samsung A26 5G": "https://www.mediamarkt.de/de/product/_samsung-galaxy-a26-5g-8256gb-black-256-gb-black-dual-sim-152441604.html",
+    "Honor Magic 8 Lite": "https://www.mediamarkt.de/de/product/_honor-magic-8-lite-256-gb-forest-green-dual-sim-3027814.html",
+    "Honor 400 Lite": "https://www.mediamarkt.de/de/product/_honor-400-lite-256-gb-velvet-grey-dual-sim-154058553.html",
+    "Honor 400 Smart": "https://www.mediamarkt.de/de/product/_honor-400-smart-honor-choice-x7-lite-128-gb-velvet-black-dual-sim-3009490.html",
+    "Samsung A57 5G": "https://www.mediamarkt.de/de/product/_samsung-galaxy-a57-256-gb-awesome-gray-dual-sim-3039261.html"
+  },
+  "意大利": {
+    "Note 15 Pro": "https://www.mediaworld.it/it/product/_xiaomi-redmi-note-15-pro-4g-8256gb-256-gb-nero-177259463.html",
+    "Note 15 5G": "https://www.mediaworld.it/it/product/_xiaomi-redmi-note-15-5g-8256-256-gb-557278.html",
+    "Samsung A56 5G": "https://www.unieuro.it/online/Smartphone/Galaxy-A56-5G-pidOMNA565G128GR",
+    "Samsung A57 5G": "https://www.unieuro.it/online/Smartphone/A57-5G-pidSAMA575G256G"
+  },
+  "罗马尼亚": {
+    "Note 15": "https://www.emag.ro/telefon-mobil-xiaomi-redmi-note-15-6gb-ram-128gb-green-srm2330-73066/pd/DYFDZ83BM/",
+    "Note 15 Pro": "https://www.emag.ro/telefon-mobil-xiaomi-redmi-note-15-pro-4g-nfc-8gb-ram-256gb-rom-albastru-ro-note15pro4g-8gb256gb-blue/pd/DJYR4T2BM/",
+    "Note 15 Pro 5G": "https://www.emag.ro/telefon-mobil-xiaomi-redmi-note-15-pro-8gb-ram-256gb-5g-black-kxg0405032/pd/DNXN683BM/",
+    "Note 15 Pro+ 5G": "https://www.emag.ro/telefon-mobil-xiaomi-redmi-note-15-pro-plus-12gb-ram-512gb-5g-black-xa-rn15ppsbc512/pd/DH9N683BM/",
+    "Samsung A57 5G": "https://www.emag.ro/telefon-mobil-samsung-galaxy-a57-dual-sim-8gb-ram-128gb-5g-awesome-navy-sm-a576bdbbeue/pd/DB645M2BM/",
+    "Samsung A56 5G": "https://www.emag.ro/telefon-mobil-samsung-galaxy-a56-dual-sim-8gb-ram-128gb-5g-awesome-olive-sm-a566bzgaeue/pd/DLZ5X33BM/",
+    "Samsung A37 5G": "https://www.emag.ro/telefon-mobil-samsung-galaxy-a37-dual-sim-6gb-ram-128gb-5g-awesome-charcoal-sm-a376bzabeue/pd/DR545M2BM/",
+    "Samsung A36 5G": "https://www.emag.ro/telefon-mobil-samsung-galaxy-a36-dual-sim-8gb-ram-256gb-5g-awesome-white-sm-a366bzageue/pd/DXZ5X33BM/",
+    "Samsung A26 5G": "https://www.emag.ro/telefon-mobil-samsung-galaxy-a26-dual-sim-6gb-ram-128gb-5g-peach-pink-sm-a266bzid/pd/DYTPFH3BM/",
+    "Samsung A17 5G": "https://www.emag.ro/telefon-mobil-samsung-galaxy-a17-dual-sim-4gb-ram-128gb-5g-black-sm-a176bzkaeue/pd/DJ57K93BM/",
+    "Samsung A17 LTE": "https://www.emag.ro/telefon-mobil-samsung-galaxy-a17-dual-sim-4gb-ram-128gb-4g-black-sm-a175fzkbeue/pd/DN57K93BM/",
+    "Samsung A17 4G": "https://www.emag.ro/telefon-mobil-samsung-galaxy-a17-dual-sim-4gb-ram-128gb-4g-black-sm-a175fzkbeue/pd/DN57K93BM/",
+    "Honor 400": "https://www.emag.ro/telefon-mobil-honor-400-dual-sim-8gb-ram-512gb-rom-desert-gold-5109buuv/pd/DJT4CN3BM/",
+    "Honor 400 Lite": "https://www.emag.ro/telefon-mobil-honor-400-lite-dual-sim-8gb-ram-256gb-velvet-black-5109bruv/pd/DB9DSD3BM/",
+    "Honor 600": "https://www.emag.ro/telefon-mobil-honor-600-dual-sim-8gb-ram-256gb-rom-orange-casti-honor-choice-earbuds-x7e-active-incluse-5109chcs-5504adcy/pd/DXDZST2BM/",
+    "Honor 600 Lite": "https://www.emag.ro/telefon-mobil-honor-600-lite-8gb-ram-256gb-5g-velvet-black-b010593001we/pd/DHX5ZM2BM/",
+    "Honor Magic 8 Lite": "https://www.emag.ro/telefon-mobil-honor-magic-8-lite-dual-sim-8gb-ram-256gb-midnight-black-casti-honor-choice-earbuds-x7e-active-incluse-5109byqt-5504adcy/pd/D1F0Z83BM/",
+    "Honor Magic 7 Lite": "https://www.emag.ro/telefon-mobil-honor-magic7-lite-dual-sim-8gb-ram-256gb-titanium-black-5109bmfw/pd/DLB5HB3BM/",
+    "Honor X8c": "https://www.emag.ro/telefon-mobil-honor-x8c-dual-sim-8gb-ram-256gb-marrs-green-5109bqda/pd/D1B5HB3BM/",
+    "Honor X8d": "https://www.emag.ro/telefon-mobil-honor-x8d-dual-sim-8gb-ram-256gb-4g-grey-b010620014we/pd/DN5YLD2BM/",
+    "Moto Edge 60 Fusion": "https://www.emag.ro/telefon-mobil-motorola-edge-60-fusion-8gb-ram-256gb-5g-pantone-amazonite-840023295843/pd/DV83193BM/",
+    "Moto G86": "https://www.emag.ro/telefon-mobil-motorola-moto-g86-8gb-ram-256gb-5g-cosmic-sky-pb7l0098pl/pd/D0Z3VH3BM/"
+  }
+};
+function getSourceUrl(country, productName) {
+  const map = SOURCE_URLS[country];
+  if (!map) return '';
+  if (map[productName]) return map[productName];
+  const noRedmi = productName.replace(/^Redmi\s+/i, '');
+  if (map[noRedmi]) return map[noRedmi];
+  const normName = noRedmi.toLowerCase();
+  for (const key in map) {
+    if (key.toLowerCase() === normName) {
+      return map[key];
+    }
+  }
+  return '';
+}
+function priceLink(price, url) {
+  if (!url) return price;
+  return `<a href="${url}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-decoration-style:dotted;">${price}</a>`;
+}
+
 const summaryData = [
-  ["东亚","香港","HKD","1,299 (6+128)","1,999 (8+256)","—","2,499 (12+256)","2,999 (12+256)","Fortress","完整"],
-  ["东南亚","泰国","THB","6,699 (8+256)","8,499 (8+256)","—","9,999 (8+256) / 12,990 (12+512)","14,990 (12+512)","BNN (BaNANA)","完整"],
-  ["东南亚","越南","VND","5,490,000 (6+128)","6,590,000 (6+128)","—","10,690,000 (12+256)","12,490,000 (12+256)","TGDD/CPS","完整"],
-  ["东南亚","马来西亚","MYR","—","849 (6+128) / 949-999 (8+256)","—","—","—","TechNave/Lazada","部分缺失"],
-  ["东南亚","菲律宾","PHP","10,999 (8+128)","—","12,999 (8+256, Pro 4G)","17,999 (12+256)","25,999 (12+512)","Xiaomi PH/Lazada","完整"],
-  ["印尼","印尼","IDR","2,599,000 (6+128) / 3,099,000 (8+256)","3,299,000 (6+128) / 3,799,000 (8+256)","—","4,699,000 (8+256)","5,999,000 (8+256) / 6,799,000 (12+512)","mi.co.id/Tokopedia/Lazada","完整"],
+  ["东亚","香港","HKD","1,299 (6+128) · 1,599 (8+256)","1,999 (8+256) · 2,299 (8+512)","—","2,499 (12+256) · 2,799 (12+512)","2,999 (12+256) · 12+512 缺货","Fortress","完整"],
+  ["东南亚","泰国","THB","—","8,499 (8+256)","—","9,990 (8+256) / 11,990 (12+512)","15,990 (12+512)","BNN","部分核验；其余目标 coming soon/sold out/404"],
+  ["东南亚","越南","VND","—","—","—","—","—","Samsung VN/TGDD/Lazada","部分核验；Samsung A57/A37 已取得精确购买页"],
+  ["东南亚","马来西亚","MYR","—","—","—","—","—","Samsung/OPPO 官网","部分核验；5 个竞品规格已验证"],
+  ["东南亚","菲律宾","PHP","—","—","—","—","—","Samsung/OPPO 官网","部分核验；OPPO 当前页无价格/购买入口"],
+  ["印尼","印尼","IDR","3,199,000 (8+128) / 3,399,000 (8+256)","4,199,000 (8+256) / 4,799,000 (12+512)","—","5,099,000 (8+256) / 5,999,000 (12+512)","5,999,000 (8+256) / 6,799,000 (12+512)","Erafone","完整"],
    ["独联体","俄罗斯","RUB","14,999 (6+128) / 18,999 (8+256)","—","24,999 (8+256) / 30,999 (12+512)","28,999 (8+256)","33,999 (8+256) / 41,999 (12+512)","DNS-shop.ru","完整"],
   ["独联体","哈萨克斯坦","KZT","90,290 (6+128) / 113,990 (8+256)","—","—","189,990 (8+512)","204,250 (8+256)","DNS-shop.kz","完整"],
   ["西欧","西班牙","EUR","199.90 (8+256)","259.90 (8+256)","259.90 (8+256)","299.90 (8+256)","379.90 (8+256)","El Corte Inglés","完整"],
-  ["西欧","法国","EUR","~220 (6+128)","—","—","~339 (8+256)","—","Fnac/Boulanger","部分缺失"],
-  ["西欧","德国","EUR","~158 (6+128)","199 (6+128)","—","399.90 (8+256)","399.99 (256)","Saturn/MediaMarkt","完整"],
-  ["西欧","意大利","EUR","待提供","待提供","待提供","待提供","待提供","MediaWorld","需输入价格"],
+  ["西欧","法国","EUR","216.83 (Fnac)","272 (Fnac)","227 (Fnac)","326.90 (Fnac)","389 (Fnac)","Fnac","完整"],
+  ["西欧","德国","EUR","169 (MSD)","—","249 (MSD)","279 (MSD)","—","MSD","部分缺失"],
+  ["西欧","意大利","EUR","—","249.90 (MediaWorld)","279.49 (MediaWorld)","—","—","MediaWorld/Unieuro","部分缺失"],
   ["拉美","智利","CLP","—","269,990 (8+256)","—","329,990 (8+256)","424,990 (8+256)","Ripley/Entel","完整"],
   ["拉美","秘鲁","PEN","669 (6+128)~799","1,268 (8+256)","—","1,494 (8+512)","1,649 (12+512)","Oechsle/PlazaVea","完整"],
   ["拉美","墨西哥","MXN","5,999 (8+256)","—","7,499 (8+256)","9,999 (8+512)","10,999 (12+512)","mi.com/mx","完整"],
   ["拉美","哥伦比亚","COP","—","—","—","1,699,050 (8+256)","2,316,950 (12+512)","Alkosto","部分缺失"],
-  ["中东","沙特","SAR","999 (8+256, Jarir)","788 (6+128)","—","1,349~1,399 (8+256)","1,699 (12+512)","Jarir/Extra/Noon","完整"],
-  ["中东","阿联酋","AED","909 (8+256, Jumbo)","644 (6+128)","—","1,059~1,299 (12+256)","1,001~1,599 (12+256)","Jumbo/Noon","完整"],
-  ["中东","土耳其","TRY","16,999 (8+256)","—","20,999 (8+256, Pro 4G)","26,999 (8+256)","32,999 (8+256)","Teknosa/Trendyol","完整"],
-  ["非洲","埃及","EGP","11,999~16,399 (6+128)","16,299~22,299 (8+256)","—","21,799~30,699 (12+256)","—","2B.com.eg/Jumia","完整"],
+  ["中东","沙特","SAR","999 (8+256)","待提供","—","待提供","待提供","Jarir","部分缺失(多款我方价待直采)"],
+  ["中东","阿联酋","AED","—","909 (8+256)","—","969 (12+256)","1,499 (12+512)","Emax (mi.com/ae 暂代)","部分缺失(竞品多待提供)"],
+  ["中东","土耳其","TRY","16,999 (8+256)","待提供","20,999 (8+256, Pro 4G)","26,999 (8+256)","32,999 (8+256)","Vatan/Teknosa","较好"],
+  ["非洲","埃及","EGP","—","—","—","—","—","Aman Stores (待采集)","需输入价格 — 非 Aman 渠道已清空"],
   ["非洲","摩洛哥","MAD","待提供","待提供","待提供","待提供","待提供","mi-store.ma/Mobile57","需输入价格"],
-  ["非洲","尼日利亚","NGN","274,868~385,000 (6+128)","—","413,555 (8+256)","499,000 (8+256)","649,000 (12+512)","Jumia NG","完整"],
-  ["非洲","南非","ZAR","6,999 (8+256)","—","8,499 (12+512, Pro 4G)","—","10,999 (12+512)","Vodacom/Takealot","完整"]
+  ["非洲","尼日利亚","NGN","305,000 (6+128), 342,000 (8+256)","—","445,000 (8+256), 527,000 (12+512)","—","657,900 (8+256), 734,400 (12+512)","Pointek ✓","完整"],
+  ["非洲","南非","ZAR","6,999 (8+256)","—","8,499 (12+512, Pro 4G)","—","10,999 (12+512)","Vodacom/Takealot","完整"],
+  // ===== 东北欧 (2026-07-21；仅罗马尼亚 Emag 刷新，Datart/Media Expert 阻断) =====
+  ["东北欧","波兰","PLN","1,099 (6+128)","1,199 (8+256)","~1,299 (8+256)","1,599 (8+256)","1,999 (12+512)","Media Expert","blocked（旧数据，未刷新）"],
+  ["东北欧","捷克","CZK","~3,990 (6+128)","~4,990 (8+256)","~5,990 (8+256)","7,099 (8+256)","8,440 (12+512)","Datart","blocked（旧数据，未刷新）"],
+  ["东北欧","罗马尼亚","RON","885.60 (6+128)","— (未找到)","1,267.35 (8+256)","1,436.40 (8+256)","2,191.20 (12+512)","Emag","21/24验证;3款未找到"]
 ];
 
 // Detail data with USD prices (from redmi_note15_price_detail.csv)
 // [country, model, config, localPrice, usdPrice, currency]
 const detailData = [
   ["香港","Redmi Note 15","6GB+128GB","1,299","~166","HKD"],
+  ["香港","Redmi Note 15","8GB+256GB","1,599","~205","HKD"],
   ["香港","Redmi Note 15 5G","8GB+256GB","1,999","~256","HKD"],
+  ["香港","Redmi Note 15 5G","8GB+512GB","2,299","~294","HKD"],
   ["香港","Redmi Note 15 Pro 5G","12GB+256GB","2,499","~320","HKD"],
+  ["香港","Redmi Note 15 Pro 5G","12GB+512GB","2,799","~358","HKD"],
   ["香港","Redmi Note 15 Pro+ 5G","12GB+256GB","2,999","~384","HKD"],
-  ["泰国","Redmi Note 15","8GB+256GB","6,699","~182","THB"],
-  ["泰国","Redmi Note 15 5G","8GB+256GB","8,499","~231","THB"],
-  ["泰国","Redmi Note 15 Pro 5G","8GB+256GB","9,999","~272","THB"],
-  ["泰国","Redmi Note 15 Pro 5G","12GB+512GB","12,990","~354","THB"],
-  ["泰国","Redmi Note 15 Pro+ 5G","12GB+512GB","14,990","~408","THB"],
-  ["越南","Redmi Note 15","6GB+128GB","5,490,000","~215","VND"],
-  ["越南","Redmi Note 15 5G","6GB+128GB","6,590,000","~259","VND"],
-  ["越南","Redmi Note 15 Pro 5G","12GB+256GB","10,690,000","~420","VND"],
-  ["越南","Redmi Note 15 Pro+ 5G","12GB+256GB","12,490,000","~490","VND"],
-  ["马来西亚","Redmi Note 15 5G","6GB+128GB","849","~182","MYR"],
-  ["马来西亚","Redmi Note 15 5G","8GB+256GB","949~999","~203~214","MYR"],
-  ["菲律宾","Redmi Note 15","8GB+128GB","10,999","~188","PHP"],
-  ["菲律宾","Redmi Note 15 Pro 4G","8GB+256GB","12,999~14,999","~222~256","PHP"],
-  ["菲律宾","Redmi Note 15 Pro 5G","12GB+256GB","17,999~19,999","~308~342","PHP"],
-  ["菲律宾","Redmi Note 15 Pro+ 5G","12GB+512GB","25,999~27,999","~445~479","PHP"],
-  ["印尼","Redmi Note 15","6GB+128GB","2,599,000","~160","IDR"],
-  ["印尼","Redmi Note 15","8GB+256GB","3,099,000","~190","IDR"],
-  ["印尼","Redmi Note 15 5G","6GB+128GB","3,299,000","~203","IDR"],
-  ["印尼","Redmi Note 15 5G","8GB+256GB","3,799,000","~234","IDR"],
-  ["印尼","Redmi Note 15 Pro 5G","8GB+256GB","4,699,000","~289","IDR"],
+  ["泰国","Redmi Note 15 5G","8GB+256GB","8,499","~253","THB"],
+  ["泰国","Redmi Note 15 Pro 5G","8GB+256GB","9,990","~297","THB"],
+  ["泰国","Redmi Note 15 Pro 5G","12GB+512GB","11,990","~356","THB"],
+  ["泰国","Redmi Note 15 Pro+ 5G","12GB+512GB","15,990","~475","THB"],
+  // 马来西亚: 仅保留 mi.com/my 官网直接抓取确认的价格
+  ["印尼","Redmi Note 15","8GB+128GB","3,199,000","~197","IDR"],
+  ["印尼","Redmi Note 15","8GB+256GB","3,399,000","~209","IDR"],
+  ["印尼","Redmi Note 15 5G","8GB+256GB","4,199,000","~258","IDR"],
+  ["印尼","Redmi Note 15 5G","12GB+512GB","4,799,000","~295","IDR"],
+  ["印尼","Redmi Note 15 Pro 5G","8GB+256GB","5,099,000","~314","IDR"],
+  ["印尼","Redmi Note 15 Pro 5G","12GB+512GB","5,999,000","~369","IDR"],
   ["印尼","Redmi Note 15 Pro+ 5G","8GB+256GB","5,999,000","~369","IDR"],
   ["印尼","Redmi Note 15 Pro+ 5G","12GB+512GB","6,799,000","~418","IDR"],
   ["俄罗斯","Redmi Note 15","6GB+128GB","14,999","~192","RUB"],
@@ -423,12 +656,16 @@ const detailData = [
   ["西班牙","Redmi Note 15 Pro 4G","8GB+256GB","259.90","~281","EUR"],
   ["西班牙","Redmi Note 15 Pro 5G","8GB+256GB","299.90","~324","EUR"],
   ["西班牙","Redmi Note 15 Pro+ 5G","8GB+256GB","379.90","~411","EUR"],
-  ["法国","Redmi Note 15","6GB+128GB","~220","~238","EUR"],
-  ["法国","Redmi Note 15 Pro 5G","8GB+256GB","~339","~367","EUR"],
-  ["德国","Redmi Note 15","6GB+128GB","~158","~171","EUR"],
-  ["德国","Redmi Note 15 5G","6GB+128GB","199","~215","EUR"],
-  ["德国","Redmi Note 15 Pro 5G","8GB+256GB","399.90","~433","EUR"],
-  ["德国","Redmi Note 15 Pro+ 5G","256GB","399.99","~433","EUR"],
+  ["法国","Redmi Note 15","6GB+128GB","216.83","~236","EUR"],
+  ["法国","Redmi Note 15 5G","8GB+256GB","272","~296","EUR"],
+  ["法国","Redmi Note 15 Pro","8GB+256GB","227","~247","EUR"],
+  ["法国","Redmi Note 15 Pro 5G","8GB+256GB","326.90","~355","EUR"],
+  ["法国","Redmi Note 15 Pro+ 5G","8GB+256GB","389","~423","EUR"],
+  ["德国","Redmi Note 15","8GB+256GB","169","~184","EUR"],
+  ["德国","Redmi Note 15 Pro","8GB+256GB","249","~271","EUR"],
+  ["德国","Redmi Note 15 Pro 5G","8GB+256GB","279","~303","EUR"],
+  ["意大利","Redmi Note 15 5G","8GB+256GB","249.90","~272","EUR"],
+  ["意大利","Redmi Note 15 Pro","8GB+256GB","279.49","~304","EUR"],
   ["智利","Redmi Note 15 5G","8GB+256GB","269,990","~280","CLP"],
   ["智利","Redmi Note 15 Pro 5G","8GB+256GB","329,990","~342","CLP"],
   ["智利","Redmi Note 15 Pro+ 5G","8GB+256GB","424,990","~440","CLP"],
@@ -442,29 +679,46 @@ const detailData = [
   ["墨西哥","Redmi Note 15 Pro+ 5G","12GB+512GB","10,999","~596","MXN"],
   ["哥伦比亚","Redmi Note 15 Pro 5G","8GB+256GB","1,699,050","~400","COP"],
   ["哥伦比亚","Redmi Note 15 Pro+ 5G","12GB+512GB","~2,316,950","~550","COP"],
-  ["沙特","Redmi Note 15","8GB+256GB","894~999","~238~266","SAR"],
-  ["沙特","Redmi Note 15 5G","6GB+128GB","788","~210","SAR"],
-  ["沙特","Redmi Note 15 Pro 5G","8GB+256GB","1,269~1,399","~338~373","SAR"],
-  ["沙特","Redmi Note 15 Pro+ 5G","12GB+512GB","1,699 (Jarir/Extra)","~453","SAR"],
-  ["阿联酋","Redmi Note 15","8GB+256GB","909 (Jumbo)","~247","AED"],
-  ["阿联酋","Redmi Note 15 5G","6GB+128GB","644","~175","AED"],
-["阿联酋","Redmi Note 15 Pro 5G","12GB+256GB","1,059~1,299","~288~353","AED"],
-   ["阿联酋","Redmi Note 15 Pro+ 5G","12GB+256GB","1,001~1,599","~272~435","AED"],
+  ["沙特","Redmi Note 15","8GB+256GB","999 (Jarir)","~266","SAR"],
+  ["沙特","Redmi Note 15 5G","8GB+256GB","待提供 (原 via kaa price compare, 已清除)","—","SAR"],
+  ["沙特","Redmi Note 15 Pro 5G","8GB+256GB","待提供 (原 via asaary, 已清除)","—","SAR"],
+  ["沙特","Redmi Note 15 Pro+ 5G","12GB+512GB","待提供 (原 via asaary, 已清除)","—","SAR"],
+  ["阿联酋","Redmi Note 15","8GB+256GB","— (Emax 缺数据)","—","AED"],
+  ["阿联酋","Redmi Note 15 5G","8GB+256GB","909 (mi.com/ae)","~248","AED"],
+["阿联酋","Redmi Note 15 Pro 5G","12GB+256GB","969 (mi.com/ae)","~264","AED"],
+   ["阿联酋","Redmi Note 15 Pro+ 5G","12GB+512GB","1,499 (mi.com/ae)","~408","AED"],
    ["土耳其","Redmi Note 15","8GB+256GB","16,999","~485","TRY"],
   ["土耳其","Redmi Note 15 Pro 4G","8GB+256GB","20,999","~599","TRY"],
   ["土耳其","Redmi Note 15 Pro 5G","8GB+256GB","26,999","~771","TRY"],
   ["土耳其","Redmi Note 15 Pro+ 5G","8GB+256GB","32,999","~943","TRY"],
-  ["埃及","Redmi Note 15","6GB+128GB","11,999~16,399","~244~333","EGP"],
-  ["埃及","Redmi Note 15 5G","8GB+256GB","16,299~22,299","~331~453","EGP"],
-  ["埃及","Redmi Note 15 Pro 5G","12GB+256GB","21,799~30,699","~443~623","EGP"],
+  ["埃及","Redmi Note 15","6GB+128GB","—","—","EGP"],
+  ["埃及","Redmi Note 15 5G","8GB+256GB","—","—","EGP"],
+  ["埃及","Redmi Note 15 Pro 5G","12GB+256GB","—","—","EGP"],
   ["摩洛哥","Redmi Note 15 5G","6GB+128GB","待提供","待提供","MAD"],
-  ["尼日利亚","Redmi Note 15","6GB+128GB","274,868~385,000","~177~248","NGN"],
-  ["尼日利亚","Redmi Note 15 Pro 4G","8GB+256GB","413,555","~267","NGN"],
-  ["尼日利亚","Redmi Note 15 Pro 5G","8GB+256GB","499,000","~322","NGN"],
-  ["尼日利亚","Redmi Note 15 Pro+ 5G","12GB+512GB","649,000","~419","NGN"],
+  ["尼日利亚","Redmi Note 15","6GB+128GB","305,000","~197","NGN"],
+  ["尼日利亚","Redmi Note 15","8GB+256GB","342,000","~221","NGN"],
+  ["尼日利亚","Redmi Note 15 Pro","8GB+256GB","445,000","~287","NGN"],
+  ["尼日利亚","Redmi Note 15 Pro","12GB+512GB","527,000","~340","NGN"],
+  ["尼日利亚","Redmi Note 15 Pro+ 5G","12GB+512GB","734,400","~474","NGN"],
   ["南非","Redmi Note 15","8GB+256GB","6,999","~380","ZAR"],
   ["南非","Redmi Note 15 Pro 4G","12GB+512GB","8,499","~461","ZAR"],
-  ["南非","Redmi Note 15 Pro+ 5G","12GB+512GB","10,999","~597","ZAR"]
+  ["南非","Redmi Note 15 Pro+ 5G","12GB+512GB","10,999","~597","ZAR"],
+   // ===== 东北欧 (2026-07-21；仅罗马尼亚 Emag 刷新，Datart/Media Expert 阻断) =====
+  ["波兰","Redmi Note 15","6GB+128GB","1,099","~275","PLN"],
+  ["波兰","Redmi Note 15 5G","8GB+256GB","1,199","~300","PLN"],
+  ["波兰","Redmi Note 15 Pro","8GB+256GB","~1,299","~325","PLN"],
+  ["波兰","Redmi Note 15 Pro 5G","8GB+256GB","1,599","~400","PLN"],
+  ["波兰","Redmi Note 15 Pro+ 5G","12GB+512GB","1,999","~500","PLN"],
+  ["捷克","Redmi Note 15","6GB+128GB","~3,990","~166","CZK"],
+  ["捷克","Redmi Note 15 5G","8GB+256GB","~4,990","~208","CZK"],
+  ["捷克","Redmi Note 15 Pro","8GB+256GB","~5,990","~250","CZK"],
+  ["捷克","Redmi Note 15 Pro 5G","8GB+256GB","7,099","~296","CZK"],
+  ["捷克","Redmi Note 15 Pro+ 5G","12GB+512GB","8,440","~352","CZK"],
+    ["罗马尼亚","Redmi Note 15","6GB+128GB","885.60","~193","RON"],
+   ["罗马尼亚","Redmi Note 15 5G","8GB+256GB","—","—","RON"],
+    ["罗马尼亚","Redmi Note 15 Pro","8GB+256GB","1,267.35","~276","RON"],
+   ["罗马尼亚","Redmi Note 15 Pro 5G","8GB+256GB","1,436.40","~312","RON"],
+   ["罗马尼亚","Redmi Note 15 Pro+ 5G","12GB+512GB","2,191.20","~476","RON"]
 ];
 
 // Helper: get best USD price for a (country, model) pair
@@ -494,13 +748,14 @@ const PRODUCT_STATS = { P16U:{cnt:26}, P16:{cnt:24}, P6:{cnt:19}, P17:{cnt:25}, 
 
 const compMapping = {
   P16U: {
-    "中国香港":["Samsung A57","Samsung A56","Honor 400","Honor 600"],
-    "印尼":["Samsung A57","Samsung A56","OPPO Reno 14F","OPPO Reno 15F","Honor X8c","Honor X8d"],
+    "中国香港":["Samsung A57","Honor 400","Honor 600"],
+    "印尼":["Samsung A57","Samsung A56","OPPO Reno 15F","OPPO Reno 16F"],
     "泰国":["Samsung A57","OPPO Reno 14F","OPPO Reno 15F","Honor 600 lite","Honor X8c","Honor X8d"],
     "菲律宾":["Samsung A57","OPPO Reno 14F","OPPO Reno 15F","Honor X8c","Honor X8d","vivo V50"],
     "越南":["Samsung A57","Samsung A56","OPPO Reno 15F","Honor X8c","Honor X8d","vivo V50 Lite"],
     "马来西亚":["Samsung A57","OPPO Reno 14F","Honor 600 lite","Honor X8c","Honor X8d","vivo V50"],
     "俄罗斯":["Samsung A57","Samsung A56","OPPO Reno 15F","Honor X9c","Honor X9d"],
+    "哈萨克斯坦":["Samsung A57","Samsung A56","Honor X9c","Honor X9d","OPPO Reno 15F"],
     "西班牙":["Samsung A57","Samsung A56","Honor 400","Honor 600","Moto Edge 60 Fusion"],
     "法国":["Samsung A57","Samsung A56","Honor 400","Honor 600","Moto Edge 60 Fusion"],
     "德国":["Samsung A57","Samsung A56","Honor 400","Honor 600"],
@@ -522,8 +777,8 @@ const compMapping = {
     "罗马尼亚":["Samsung A57","Samsung A56","Honor 400","Honor 600","Honor Magic 8 lite"]
   },
   P16: {
-    "中国香港":["Samsung A37","Samsung A36","OPPO Reno 14F","OPPO Reno 15F","Honor X9c","Honor X9d"],
-    "印尼":["Samsung A37","Samsung A36","Honor X9c","OPPO Reno 14F","OPPO Reno 15F"],
+    "中国香港":["Samsung A27","Samsung A37","OPPO Reno 15F","Honor X9d"],
+    "印尼":["Samsung A37","Samsung A36","OPPO Reno 15F"],
     "泰国":["Samsung A37","Samsung A36","Samsung A26","OPPO Reno 14F","OPPO Reno 15F","Honor X9c","Honor X9d"],
     "菲律宾":["Samsung A37","Samsung A36","OPPO A6 pro 5G","OPPO Reno 14F","OPPO Reno 15F","Honor X9d"],
     "越南":["Samsung A37","Samsung A36","OPPO A6 pro 5G","OPPO Reno 15F","Honor X9d"],
@@ -543,9 +798,10 @@ const compMapping = {
     "伊拉克":["Samsung A37","Samsung A36","Honor X9d"],
     "埃及":["Samsung A37","Samsung A36","Honor X9c","Honor X9d","OPPO Reno 15F"],
     "摩洛哥":["Samsung A36"],
+    "尼日利亚":["Samsung A37","Samsung A36","Samsung A26"],
     "波兰":["Samsung A37","Samsung A36","Honor Magic 8 lite"],
     "捷克":["Samsung A37","Samsung A36","Honor Magic 7 lite","Honor Magic 8 lite"],
-    "哈萨克斯坦":["Samsung A56 5G"],
+    "哈萨克斯坦":["Samsung A36","Samsung A56","Honor X9c","Honor 600 lite"],
     "罗马尼亚":["Samsung A37","Samsung A36","Honor Magic 7 lite","Honor Magic 8 lite"]
   },
   P6: {
@@ -565,13 +821,13 @@ const compMapping = {
     "摩洛哥":["Samsung A26","Honor 400 lite"],
     "波兰":["Honor 400 lite","Samsung A26"],
     "捷克":["Honor 400 lite","Samsung A26"],
-    "罗马尼亚":["Samsung A26"],
+    "罗马尼亚":["Samsung A17 5G","Samsung A17 4G","Honor X7d 5G","Honor X7e 5G","Moto Edge 60 Fusion"],
     "菲律宾":["Samsung A26"],
     "越南":["Honor 400 lite","Samsung A26"]
   },
   P17: {
-    "中国香港":["Honor 400 lite","OPPO A6 pro 5G"],
-    "印尼":["Samsung A17 5G","OPPO A5 pro 5G","OPPO A6 pro 5G","Honor X7d 5G","vivo V40 5G","Infinix Hot 60Pro+"],
+    "中国香港":["OPPO A6 pro 5G"],
+    "印尼":["Samsung A17 5G"],
     "泰国":["Samsung A17 5G","OPPO A5 pro 5G","OPPO A6 pro 5G","Honor X7d 5G","Honor X7e 5G"],
     "菲律宾":["Samsung A17 5G","OPPO A5 pro 5G","OPPO A6 pro 5G","Honor X7d 5G","vivo V40 5G"],
     "越南":["Samsung A17 5G","OPPO A5 pro 5G","OPPO A6 pro 5G","Honor X7d 5G"],
@@ -594,16 +850,17 @@ const compMapping = {
     "尼日利亚":["Samsung A17 5G","OPPO A5 pro 5G","OPPO A6 pro 5G","Tecno Spark 40 Pro","Infinix Hot 60 Pro"],
     "波兰":["Samsung A17 5G","Samsung A17 4G","Honor X7d 5G","Honor X7e 5G","Moto Edge 60 Fusion"],
     "捷克":["Samsung A17 5G","Samsung A17 4G","Honor X7d 5G","Honor X7e 5G","Moto Edge 60 Fusion"],
-    "罗马尼亚":["Samsung A17 5G","Samsung A17 4G","Honor X7d 5G","Honor X7e 5G","Moto Edge 60 Fusion"]
+    "罗马尼亚":["Samsung A26"]
   },
   P7: {
-    "中国香港":["Samsung A17 5G","Honor 400 lite","Honor 600 lite"],
-    "印尼":["Samsung A17 4G","Samsung A17 5G","OPPO A5","OPPO A6","vivo Y29","Infinix Hot 60Pro+"],
+    "中国香港":["Samsung A17 5G","Honor 600 lite"],
+    "印尼":["Samsung A17 4G","Samsung A17 5G"],
     "泰国":["Samsung A17 4G","Samsung A17 5G","OPPO A5 Pro 4G","OPPO A6 Pro 5G","OPPO A6 4G","Honor X7d 5G"],
     "菲律宾":["Samsung A17 4G","Samsung A17 5G","OPPO A5 4G","OPPO A6 Pro 4G","Honor X7d"],
     "越南":["Samsung A17 4G","Samsung A17 5G","OPPO A5","OPPO A6","OPPO A6 Pro"],
     "马来西亚":["Samsung A17 4G","Samsung A17 5G","Honor X7d","Honor X7e"],
     "俄罗斯":["Samsung A17 4G","Samsung A26","Honor 400 lite","Honor X8c","Honor X8d"],
+    "哈萨克斯坦":["Samsung A26","Samsung A17 4G"],
     "西班牙":["Samsung A17 4G","Samsung A17 5G","Honor 400 smart"],
     "法国":["Samsung A17 4G","Samsung A17 5G","Honor 400 smart"],
     "德国":["Samsung A17 4G","Samsung A17 5G","Honor 400 smart"],
@@ -628,29 +885,89 @@ const compMapping = {
 
 const compData = [
   // [区域, 国家, 竞品型号, 竞品配置, 竞品当地价, 竞品USD, 我方型号, 我方配置, 我方当地价, 我方USD, 价差]
-  ["东亚","香港","Samsung A36","8GB+256GB","HK$2,698","~346","Note 15 Pro 5G","12GB+256GB","HK$2,499","~320","+HK$199 (≈+$26) (我方更便宜)"],
+  // ===== 东南亚官方渠道刷新（2026-07-22）=====
+  ["东南亚","马来西亚","Samsung A36 5G","6+128GB (Samsung官网)","RM1,299","~318","Note 15 Pro 5G","—","—","—","待核验"],
+  ["东南亚","马来西亚","Samsung A17 5G","8+256GB (Samsung官网)","RM1,149","~281","Note 15 5G","—","—","—","待核验"],
+  ["东南亚","马来西亚","Samsung A17 4G","8+256GB (Samsung官网)","RM949","~232","Note 15","—","—","—","待核验"],
+  ["东南亚","马来西亚","OPPO Reno 15F 5G","8+256GB (OPPO官网)","RM1,599","~391","Note 15 Pro 5G","—","—","—","待核验"],
+  ["东南亚","马来西亚","OPPO Reno 15F 5G","12+256GB (OPPO官网)","RM1,799","~440","Note 15 Pro 5G","—","—","—","待核验"],
+  ["东南亚","菲律宾","Samsung A37 5G","8+128GB (Samsung官网)","₱25,990","~421","Note 15 Pro 5G","—","—","—","待核验"],
+  ["东南亚","菲律宾","Samsung A37 5G","8+256GB (Samsung官网)","₱27,990","~454","Note 15 Pro 5G","—","—","—","待核验"],
+  ["东南亚","泰国","Samsung A57 5G","12+256GB (BNN)","฿15,999","~475","Note 15 Pro+ 5G","12GB+512GB (BNN)","฿15,990","~475","基本持平"],
+  ["东南亚","泰国","Samsung A37 5G","8+256GB (BNN)","฿13,999","~416","Note 15 Pro 5G","8GB+256GB (BNN)","฿9,990","~297","+฿4,009 (≈+$119) (我方更便宜)"],
+  ["东南亚","泰国","Samsung A17 5G","8+128GB (BNN)","฿7,599","~226","Note 15 5G","8GB+256GB (BNN)","฿8,499","~253","-฿900 (≈-$27) (我方更贵)"],
+  ["东南亚","泰国","OPPO Reno 15F 5G","8+256GB (BNN)","฿14,999","~446","Note 15 Pro 5G","8GB+256GB (BNN)","฿9,990","~297","+฿5,009 (≈+$149) (我方更便宜)"],
+  ["东南亚","泰国","OPPO A6 4G","6+128GB (BNN)","฿6,499","~193","Note 15","—","—","—","—"],
+  ["东南亚","越南","Samsung A57 5G","8+128GB (Samsung官网VN)","₫11,690,000","~445","Note 15 Pro+ 5G","—","—","—","—"],
+  ["东南亚","越南","Samsung A57 5G","8+256GB (Samsung官网VN)","₫12,690,000","~483","Note 15 Pro+ 5G","—","—","—","—"],
+  ["东南亚","越南","Samsung A57 5G","12+256GB (Samsung官网VN)","₫13,690,000","~521","Note 15 Pro+ 5G","—","—","—","—"],
+  ["东南亚","越南","Samsung A37 5G","6+128GB (Samsung官网VN)","₫9,690,000","~369","Note 15 Pro 5G","—","—","—","—"],
+  ["东南亚","越南","Samsung A37 5G","8+128GB (Samsung官网VN)","₫10,190,000","~388","Note 15 Pro 5G","—","—","—","—"],
+  ["东南亚","越南","Samsung A37 5G","8+256GB (Samsung官网VN)","₫10,890,000","~414","Note 15 Pro 5G","—","—","—","—"],
+  // ===== 香港 (2026-07-16 Fortress 更新) =====
+  // --- P16U vs Note 15 Pro+ 5G (HK$2,999/~$384, 12+512 缺货) ---
+  ["东亚","香港","Samsung A57","12+256GB (Fortress 限時優惠)","HK$4,298","~551","Note 15 Pro+ 5G","12GB+256GB","HK$2,999","~384","+HK$1,299 (≈+$167) (我方更便宜)"],
+  ["东亚","香港","Samsung A57","12+512GB (Fortress)","HK$5,098","~652","Note 15 Pro+ 5G","12GB+256GB","HK$2,999","~384","+HK$2,099 (≈+$268) (我方更便宜)"],
+  ["东亚","香港","Honor 400","12+512GB (Fortress)","HK$2,999","~384","Note 15 Pro+ 5G","12GB+256GB","HK$2,999","~384","持平 (12+256 已缺货)"],
+  ["东亚","香港","Honor 600","12+256GB (Fortress)","HK$4,299","~551","Note 15 Pro+ 5G","12GB+256GB","HK$2,999","~384","+HK$1,300 (≈+$167) (我方更便宜)"],
+  ["东亚","香港","Honor 600","12+512GB (Fortress)","HK$4,299","~550","Note 15 Pro+ 5G","12GB+256GB","HK$2,999","~384","+HK$1,300 (≈+$166) (我方更便宜)"],
+  // --- P16 vs Note 15 Pro 5G (HK$2,499/~$320) ---
+  ["东亚","香港","Samsung A37","8+128GB (Fortress)","HK$3,098","~397","Note 15 Pro 5G","12GB+256GB","HK$2,499","~320","+HK$599 (≈+$77) (我方更便宜)"],
+  ["东亚","香港","Samsung A37","8+256GB (Fortress)","HK$3,498","~447","Note 15 Pro 5G","12GB+256GB","HK$2,499","~320","+HK$999 (≈+$128) (我方更便宜)"],
+  ["东亚","香港","Samsung A27","8+128GB (Fortress)","HK$2,998","~384","Note 15 Pro 5G","12GB+256GB","HK$2,499","~320","+HK$499 (≈+$64) (我方更便宜)"],
+  ["东亚","香港","OPPO Reno 15F","12+512GB (Fortress)","HK$2,799","~359","Note 15 Pro 5G","12GB+256GB","HK$2,499","~320","+HK$300 (≈+$38) (我方更便宜)"],
+  ["东亚","香港","Honor X9d","12+256GB (Fortress)","HK$2,899","~372","Note 15 Pro 5G","12GB+256GB","HK$2,499","~320","+HK$400 (≈+$51) (我方更便宜)"],
+  // --- P17 vs Note 15 5G (HK$1,999/~$256) ---
+  ["东亚","香港","OPPO A6 Pro 5G","8+256GB (Fortress)","HK$1,999","~256","Note 15 5G","8GB+256GB","HK$1,999","~256","持平"],
+  // --- P7 vs Note 15 (HK$1,299/~$166) ---
+  ["东亚","香港","Honor 600 Lite","8+256GB (Fortress)","HK$2,499","~320","Note 15","6GB+128GB","HK$1,299","~166","+HK$1,200 (≈+$154) (我方更便宜)"],
+  // --- P7 vs Note 15 (HK$1,299/~$166) — Samsung A17 5G (2026-07-16 Fortress 采集) ---
+  ["东亚","香港","Samsung A17 5G","6+128GB (Fortress)","HK$1,698","~217","Note 15","6GB+128GB","HK$1,299","~166","+HK$399 (≈+$51) (我方更便宜)"],
   ["拉美","智利","Samsung A56 5G","128GB","$329,990 CLP","~342","Note 15 Pro+ 5G","8GB+256GB","$329,990 CLP","~342","持平"],
   ["拉美","秘鲁","Samsung A56 5G","8GB+256GB","S/1,409","~369","Note 15 Pro 5G","8GB+512GB","S/1,494","~391","+S/85 (≈+$22)"],
   ["拉美","哥伦比亚","Samsung A56 5G","12GB+256GB","$1,699,900 COP","~403","Note 15 Pro 5G","8GB+256GB","$1,699,050 COP","~400","基本持平"],
   ["拉美","墨西哥","Samsung A56 5G","8GB+256GB (Liverpool)","MXN $7,999","~432","Note 15 Pro 5G","8GB+512GB","$9,999 MXN","~542","-$2,000 MXN (≈-$108) (我方更贵)"],
-  ["西欧","西班牙","Samsung A56 5G","8GB+128GB","€349.90 (El Corte Inglés)","~378","Note 15 Pro+ 5G","8GB+256GB","€379.90","~411","-€30 (≈-$33) (基本持平)"],
+  ["西欧","西班牙","Samsung A56 5G","8GB+128GB (El Corte Inglés)","€349.90","~378","Note 15 Pro+ 5G","8GB+256GB","€379.90","~411","-€30 (≈-$33) (基本持平)"],
   // ===== 西欧补充数据 (2026-07-09) =====
-  ["西欧","意大利","Samsung A56 5G","8GB+256GB","€319.90 (Unieuro)","~345","Note 15 Pro+ 5G","—","—","~433","-€80 (≈-$88) (我方更贵)"],
-  ["西欧","西班牙","Samsung A57 5G","256GB","€589 (El Corte Inglés)","~636","Note 15 Pro+ 5G","8GB+256GB","€379.90","~411","+€209.10 (≈+$225) (我方更便宜)"],
-  ["西欧","西班牙","Honor 400 lite","256GB","€279 (MediaMarkt)","~301","Note 15 Pro","8GB+256GB","€259.90","~281","+€19.10 (≈+$20) (基本持平)"],
-  ["西欧","法国","Samsung A37 5G","128GB","€379 (Boulanger)","~409","Note 15 Pro 5G","8GB+256GB","~€339","~367","+€40 (≈+$43) (我方更便宜)"],
-  ["西欧","德国","Samsung A57 5G","256GB","€459 (MediaMarkt)","~496","Note 15 Pro+ 5G","256GB","€399.99","~432","+€59.01 (≈+$64) (我方更便宜)"],
-  ["西欧","德国","Samsung A56 5G","128GB","€449.99 (MediaMarkt)","~486","Note 15 Pro+ 5G","256GB","€399.99","~432","+€50 (≈+$54) (我方更便宜)"],
-  ["西欧","德国","Honor Magic 8 lite","256GB","€299.99 (MediaMarkt)","~324","Note 15 Pro 5G","8GB+256GB","€399.90","~432","-€99.91 (≈-$108) (我方更贵)"],
+  ["西欧","意大利","Samsung A56 5G","8GB+256GB (Unieuro)","€319.90","~345","Note 15 Pro+ 5G","—","—","~433","-€80 (≈-$88) (我方更贵)"],
+  ["西欧","西班牙","Samsung A57 5G","256GB (El Corte Inglés)","€589","~636","Note 15 Pro+ 5G","8GB+256GB","€379.90","~411","+€209.10 (≈+$225) (我方更便宜)"],
+  // 法国 Boulanger 渠道已阻断，数据清除
+  ["西欧","德国","Samsung A57 5G","256GB (MediaMarkt)","€459","~496","Note 15 Pro+ 5G","256GB","€399.99","~432","+€59.01 (≈+$64) (我方更便宜)"],
+  ["西欧","德国","Samsung A57 5G","128GB (MediaMarkt)","€309","~336","Note 15 Pro 5G","8GB+256GB","€279","~303","+€30 (≈+$33) (基本持平)"],
+  ["西欧","德国","Honor Magic 8 lite","256GB (MediaMarkt)","€299.99","~324","Note 15 Pro 5G","8GB+256GB","€399.90","~432","-€99.91 (≈-$108) (我方更贵)"],
+  // ===== 西欧 Fnac/MSD/MediaWorld 补充 (2026-07-18) =====
+  ["西欧","法国","Samsung A56 5G","8GB+256GB (Fnac)","€437.22","~475","Note 15 Pro+ 5G","8GB+256GB","€389","~423","+€48.22 (≈+$52) (我方更便宜)"],
+  ["西欧","法国","Samsung A36 5G","128GB (Fnac)","€302","~328","Note 15 Pro 5G","8GB+256GB","€326.90","~355","-€24.90 (≈-$27) (基本持平)"],
+  ["西欧","法国","Samsung A26 5G","128GB (Fnac)","€252","~274","Note 15 Pro","8GB+256GB","€227","~247","+€25 (≈+$27) (我方更便宜)"],
+  ["西欧","法国","Honor Magic 8 lite","256GB (Fnac)","€402","~437","Note 15 Pro 5G","8GB+256GB","€326.90","~355","+€75.10 (≈+$82) (我方更便宜)"],
+  ["西欧","法国","Honor 400 lite","128GB (Fnac)","€175.20","~190","Note 15","6GB+128GB","€216.83","~236","-€41.63 (≈-$45) (我方更贵)"],
+  ["西欧","法国","Honor 400 smart","64GB (Fnac)","€182","~198","Note 15","6GB+128GB","€216.83","~236","-€34.83 (≈-$38) (我方更贵)"],
+  ["西欧","德国","Samsung A56 5G","128GB (MSD)","€329","~358","Note 15 Pro 5G","8GB+256GB","€279","~303","+€50 (≈+$55) (我方更便宜)"],
+  ["西欧","意大利","Samsung A56 5G","8GB+256GB (Unieuro)","€319.90","~348","Note 15 Pro","8GB+256GB","€279.49","~304","+€40.41 (≈+$44) (我方更便宜)"],
+  ["西欧","意大利","Samsung A56 5G","8GB+256GB (Unieuro)","€319.90","~348","Note 15 5G","8GB+256GB","€249.90","~272","+€70 (≈+$76) (我方更便宜)"],
   ["独联体","俄罗斯","Samsung A56 5G","8GB+128GB","~₽35,990","~408","Note 15 Pro+ 5G","8GB+256GB","₽28,999","~372","-₽6,991 (≈-$79)"],
   ["独联体","哈萨克斯坦","Samsung A56 5G","8GB+128GB","₸188,190","~396","Note 15 Pro 5G","8GB+512GB","₸189,990","~400","基本持平"],
+  // ===== 独联体/哈萨克斯坦 DNS-shop.kz (2026-07-09) =====
+  ["独联体","哈萨克斯坦","Samsung A57 5G","8GB+128GB (DNS)","₸229,990","~484","Note 15 Pro+ 5G","8GB+256GB","₸204,250","~430","+₸25,740 (+$54) (我方更便宜)"],
+  ["独联体","哈萨克斯坦","Samsung A57 5G","8GB+256GB (DNS)","₸249,990","~526","Note 15 Pro+ 5G","8GB+256GB","₸204,250","~430","+₸45,740 (+$96) (我方更便宜)"],
+  ["独联体","哈萨克斯坦","Samsung A56 5G","8GB+256GB (DNS)","₸227,990","~480","Note 15 Pro+ 5G","8GB+256GB","₸204,250","~430","+₸23,740 (+$50) (我方更便宜)"],
+  ["独联体","哈萨克斯坦","Honor X9d","8GB+256GB (DNS)","₸227,990","~480","Note 15 Pro+ 5G","8GB+256GB","₸204,250","~430","+₸23,740 (+$50) (我方更便宜)"],
+  ["独联体","哈萨克斯坦","OPPO Reno 15F","8GB+256GB (DNS)","₸256,490","~540","Note 15 Pro+ 5G","8GB+256GB","₸204,250","~430","+₸52,240 (+$110) (我方更便宜)"],
+  ["独联体","哈萨克斯坦","OPPO Reno 15F","8GB+512GB (DNS)","₸313,490","~660","Note 15 Pro+ 5G","8GB+256GB","₸204,250","~430","+₸109,240 (+$230) (我方更便宜)"],
+  ["独联体","哈萨克斯坦","Samsung A36 5G","8GB+128GB (DNS)","₸179,990","~379","Note 15 Pro 5G","8GB+512GB","₸189,990","~400","-₸10,000 (-$21) (基本持平)"],
+  ["独联体","哈萨克斯坦","Samsung A36 5G","8GB+256GB (DNS)","₸179,990","~379","Note 15 Pro 5G","8GB+512GB","₸189,990","~400","-₸10,000 (-$21) (基本持平)"],
+  ["独联体","哈萨克斯坦","Honor X9c","8GB+256GB (DNS)","₸151,990","~320","Note 15 Pro 5G","8GB+512GB","₸189,990","~400","-₸38,000 (-$80) (我方更贵)"],
+  ["独联体","哈萨克斯坦","Honor 600 lite","8GB+256GB (DNS)","₸208,990","~440","Note 15 Pro 5G","8GB+512GB","₸189,990","~400","+₸19,000 (+$40) (我方更便宜)"],
+  ["独联体","哈萨克斯坦","Samsung A26 5G","6GB+128GB (DNS)","₸129,990","~274","Note 15","6GB+128GB","₸90,290","~190","+₸39,700 (+$84) (我方更便宜)"],
+   ["独联体","哈萨克斯坦","Samsung A26 5G","8GB+256GB (DNS)","₸149,990","~316","Note 15","8GB+256GB","₸113,990","~240","+₸36,000 (+$76) (我方更便宜)"],
+  ["独联体","哈萨克斯坦","Samsung A17 4G","6GB+128GB (DNS)","₸132,990","~280","Note 15","6GB+128GB","₸90,290","~190","+₸42,700 (+$90) (我方更便宜)"],
+  ["独联体","哈萨克斯坦","Samsung A17 4G","8GB+256GB (DNS)","₸151,990","~320","Note 15","8GB+256GB","₸113,990","~240","+₸38,000 (+$80) (我方更便宜)"],
   // ===== 拉美补充数据 (2026-07-09) =====
   ["拉美","智利","Samsung A57 5G","128GB (Entel promo)","$379,990 CLP","~400","Note 15 Pro+ 5G","8GB+256GB","424,990 CLP","~440","+40 USD (我方更贵)"],
   ["拉美","智利","Samsung A56 5G","128GB (Entel promo)","$329,990 CLP","~347","Note 15 Pro+ 5G","8GB+256GB","329,990 CLP","~342","基本持平"],
   ["拉美","智利","Honor Magic 8 Lite","512GB (Entel promo)","$399,990 CLP","~421","Note 15 Pro 5G","8GB+256GB","329,990 CLP","~342","-79 USD (我方更便宜)"],
   ["拉美","智利","Samsung A37 5G","128GB (Entel promo)","$299,990 CLP","~316","Note 15 Pro 5G","8GB+256GB","269,990 CLP","~280","-36 USD (我方更便宜)"],
   ["拉美","智利","Honor 600","512GB (Entel promo)","$699,990 CLP","~737","Note 15 Pro+ 5G","8GB+256GB","269,990 CLP","~280","-457 USD (我方更便宜)"],
-  ["拉美","智利","Moto Edge 60 Fusion","256GB (Hites)","$239,990 CLP","~253","Note 15 Pro 5G","8GB+256GB","269,990 CLP","~280","+27 USD (我方更贵)"],
   ["拉美","哥伦比亚","Samsung A57 5G","256GB (Alkosto)","$2,199,990 COP","~524","Note 15 Pro+ 5G","12GB+512GB","~2,316,950 COP","~550","+26 USD (我方更贵)"],
   ["拉美","哥伦比亚","Honor 400","512GB (Falabella)","$2,799,900 COP","~667","Note 15 Pro+ 5G","12GB+512GB","~2,316,950 COP","~550","-117 USD (我方更便宜)"],
   ["拉美","哥伦比亚","Honor Magic 8 Lite","512GB (Alkosto)","$2,299,050 COP","~547","Note 15 Pro 5G","8GB+256GB","1,699,050 COP","~400","-147 USD (我方更便宜)"],
@@ -678,13 +995,176 @@ const compData = [
   ["拉美","秘鲁","Samsung A36 5G","256GB (Oechsle)","S/1,239","~330","Note 15 Pro","8GB+256GB","—","—","—"],
   ["拉美","秘鲁","Samsung A37 5G","256GB (Oechsle)","S/1,799","~480","Note 15 Pro 5G","8GB+256GB","—","—","—"],
   ["拉美","秘鲁","Honor Magic 7 Lite","512GB (Oechsle)","S/1,369","~365","Note 15 Pro 5G","8GB+256GB","—","—","—"],
-  ["拉美","秘鲁","Honor 600 5G","256GB (Oechsle)","S/1,999","~533","Note 15 Pro+ 5G","8GB+256GB","—","—","—"]
+   ["拉美","秘鲁","Honor 600 5G","256GB (Oechsle)","S/1,999","~533","Note 15 Pro+ 5G","8GB+256GB","—","—","—"],
+   // ===== 东北欧 (2026-07-21；仅罗马尼亚 Emag 刷新) =====
+   // --- POLAND: Media Expert (当前 blocked；以下为旧数据，仅供历史参考) ---
+  // --- P16U vs Note 15 Pro+ 5G (1,999 zł/~500) ---
+  ["东北欧","波兰","Samsung A57 5G","8/128GB (Media Expert)","1,899 zł","~475","Note 15 Pro+ 5G","12GB+512GB","1,999 zł","~500","+25 USD (我方更贵)"],
+  ["东北欧","波兰","Samsung A56 5G","8/256GB (Media Expert)","1,599 zł","~400","Note 15 Pro+ 5G","12GB+512GB","1,999 zł","~500","+100 USD (我方更贵)"],
+  ["东北欧","波兰","Honor 400","8/256GB (Media Expert)","1,499 zł","~375","Note 15 Pro+ 5G","12GB+512GB","1,999 zł","~500","+125 USD (我方更贵)"],
+  ["东北欧","波兰","Honor 600","8/256GB (Media Expert)","2,399 zł","~600","Note 15 Pro+ 5G","12GB+512GB","1,999 zł","~500","-100 USD (我方更便宜)"],
+  ["东北欧","波兰","Honor Magic 8 Lite","8/256GB (Media Expert)","1,499 zł","~375","Note 15 Pro+ 5G","12GB+512GB","1,999 zł","~500","+125 USD (我方更贵)"],
+  // --- P16 vs Note 15 Pro 5G (1,599 zł/~400) ---
+  ["东北欧","波兰","Samsung A37 5G","6/128GB (Media Expert)","1,599 zł","~400","Note 15 Pro 5G","8GB+256GB","1,599 zł","~400","持平"],
+  ["东北欧","波兰","Samsung A36 5G","8/256GB EU (Media Expert)","1,299 zł","~325","Note 15 Pro 5G","8GB+256GB","1,599 zł","~400","+75 USD (我方更贵)"],
+  ["东北欧","波兰","Honor Magic 8 Lite","8/256GB (Media Expert)","1,499 zł","~375","Note 15 Pro 5G","8GB+256GB","1,599 zł","~400","+25 USD (我方更贵)"],
+  // --- P17 vs Note 15 5G (1,199 zł/~300) ---
+  ["东北欧","波兰","Samsung A17 5G","4/128GB (Media Expert)","875 zł","~219","Note 15 5G","8GB+256GB","1,199 zł","~300","+81 USD (我方更贵)"],
+  ["东北欧","波兰","Samsung A17 4G","4/128GB (Media Expert)","699 zł","~175","Note 15 5G","8GB+256GB","1,199 zł","~300","+125 USD (我方更贵)"],
+  ["东北欧","波兰","Moto Edge 60 Fusion","8/256GB (Media Expert)","1,499 zł","~375","Note 15 5G","8GB+256GB","1,199 zł","~300","-75 USD (我方更便宜)"],
+  // --- P7 vs Note 15 (1,099 zł/~275) ---
+  ["东北欧","波兰","Samsung A17 4G","4/128GB (Media Expert)","699 zł","~175","Note 15","6GB+128GB","1,099 zł","~275","+100 USD (我方更贵)"],
+  ["东北欧","波兰","Samsung A17 5G","4/128GB (Media Expert)","875 zł","~219","Note 15","6GB+128GB","1,099 zł","~275","+56 USD (我方更贵)"],
+  // --- P6 vs Note 15 Pro (~1,299 zł/~325) ---
+  ["东北欧","波兰","Samsung A26 5G","6/128GB (Media Expert)","~899 zł","~225","Note 15 Pro","8GB+256GB","~1,299 zł","~325","+100 USD (我方更贵)"],
+  ["东北欧","波兰","Honor 400 Lite","8/256GB (Media Expert)","~1,099 zł","~275","Note 15 Pro","8GB+256GB","~1,299 zł","~325","+50 USD (我方更贵)"],
+   // --- CZECH: Datart (当前 blocked；以下为旧数据，仅供历史参考) ---
+  // --- P16U vs Note 15 Pro+ 5G (8,440 Kč/~352) ---
+  ["东北欧","捷克","Samsung A57 5G","8/128GB (Datart)","12,999 Kč","~542","Note 15 Pro+ 5G","12GB+512GB","8,440 Kč","~352","-190 USD (我方更便宜)"],
+  ["东北欧","捷克","Samsung A56 5G","8/128GB (Datart)","~10,990 Kč","~458","Note 15 Pro+ 5G","12GB+512GB","8,440 Kč","~352","-106 USD (我方更便宜)"],
+  ["东北欧","捷克","Honor 400","8/256GB (Datart)","~8,500 Kč","~354","Note 15 Pro+ 5G","12GB+512GB","8,440 Kč","~352","~-2 USD (基本持平)"],
+  ["东北欧","捷克","Honor 600","8/256GB (Datart)","~11,990 Kč","~500","Note 15 Pro+ 5G","12GB+512GB","8,440 Kč","~352","-148 USD (我方更便宜)"],
+  ["东北欧","捷克","Honor Magic 8 Lite","8/256GB (Datart)","~7,500 Kč","~313","Note 15 Pro+ 5G","12GB+512GB","8,440 Kč","~352","+39 USD (我方更贵)"],
+  // --- P16 vs Note 15 Pro 5G (7,099 Kč/~296) ---
+  ["东北欧","捷克","Samsung A37 5G","6/128GB (Datart)","10,499 Kč","~437","Note 15 Pro 5G","8GB+256GB","7,099 Kč","~296","-141 USD (我方更便宜)"],
+  ["东北欧","捷克","Samsung A36 5G","8/256GB (Datart)","~8,999 Kč","~375","Note 15 Pro 5G","8GB+256GB","7,099 Kč","~296","-79 USD (我方更便宜)"],
+  ["东北欧","捷克","Honor Magic 8 Lite","8/256GB (Datart)","~7,500 Kč","~313","Note 15 Pro 5G","8GB+256GB","7,099 Kč","~296","-17 USD (基本持平)"],
+  ["东北欧","捷克","Honor Magic 7 Lite","8/256GB (Datart)","~6,500 Kč","~271","Note 15 Pro 5G","8GB+256GB","7,099 Kč","~296","+25 USD (我方更贵)"],
+  // --- P17 vs Note 15 5G (~4,990 Kč/~208) ---
+  ["东北欧","捷克","Samsung A17 5G","4/128GB (Datart)","~4,490 Kč","~187","Note 15 5G","8GB+256GB","~4,990 Kč","~208","+21 USD (我方更贵)"],
+  ["东北欧","捷克","Samsung A17 4G","4/128GB (Datart)","~3,990 Kč","~166","Note 15 5G","8GB+256GB","~4,990 Kč","~208","+42 USD (我方更贵)"],
+  ["东北欧","捷克","Moto Edge 60 Fusion","8/256GB (Datart)","~7,990 Kč","~333","Note 15 5G","8GB+256GB","~4,990 Kč","~208","-125 USD (我方更便宜)"],
+  // --- P7 vs Note 15 (~3,990 Kč/~166) ---
+  ["东北欧","捷克","Samsung A17 4G","4/128GB (Datart)","~3,990 Kč","~166","Note 15","6GB+128GB","~3,990 Kč","~166","持平"],
+  ["东北欧","捷克","Samsung A17 5G","4/128GB (Datart)","~4,490 Kč","~187","Note 15","6GB+128GB","~3,990 Kč","~166","-21 USD (我方更便宜)"],
+  ["东北欧","捷克","Moto G56 5G","6/128GB (Datart)","~4,490 Kč","~187","Note 15","6GB+128GB","~3,990 Kč","~166","-21 USD (我方更便宜)"],
+  // --- P6 vs Note 15 Pro (~5,990 Kč/~250) ---
+  ["东北欧","捷克","Samsung A26 5G","6/128GB (Datart)","~4,990 Kč","~208","Note 15 Pro","8GB+256GB","~5,990 Kč","~250","+42 USD (我方更贵)"],
+  ["东北欧","捷克","Honor 400 Lite","8/256GB (Datart)","~4,990 Kč","~208","Note 15 Pro","8GB+256GB","~5,990 Kč","~250","+42 USD (我方更贵)"],
+  // --- ROMANIA: Emag (1 USD ≈ 4.6 RON) ---
+   // --- P16U vs Note 15 Pro+ 5G (2,191.20 RON/~476) ---
+   ["东北欧","罗马尼亚","Samsung A57 5G","8/128GB (Emag)","1,786.99 RON","~388","Note 15 Pro+ 5G","12GB+512GB","2,191.20 RON","~476","-88 USD (我方更贵)"],
+   ["东北欧","罗马尼亚","Samsung A56 5G","8/128GB (Emag)","1,649.99 RON","~359","Note 15 Pro+ 5G","12GB+512GB","2,191.20 RON","~476","-117 USD (我方更贵)"],
+   ["东北欧","罗马尼亚","Honor 400","8/512GB (Emag)","1,838.99 RON","~400","Note 15 Pro+ 5G","12GB+512GB","2,191.20 RON","~476","-76 USD (我方更贵)"],
+   ["东北欧","罗马尼亚","Honor 600","8/256GB (Emag, 套装)","2,799.99 RON","~609","Note 15 Pro+ 5G","12GB+512GB","2,191.20 RON","~476","+133 USD (我方更便宜)"],
+   ["东北欧","罗马尼亚","Honor Magic 8 lite","8/256GB (Emag, 套装)","1,899.99 RON","~413","Note 15 Pro+ 5G","12GB+512GB","2,191.20 RON","~476","-63 USD (我方更贵)"],
+   // --- P16 vs Note 15 Pro 5G (1,436.40 RON/~312) ---
+   ["东北欧","罗马尼亚","Samsung A37 5G","6/128GB (Emag)","1,460 RON","~317","Note 15 Pro 5G","8GB+256GB","1,436.40 RON","~312","+5 USD (持平)"],
+   ["东北欧","罗马尼亚","Samsung A36 5G","8/256GB (Emag)","1,656.53 RON","~360","Note 15 Pro 5G","8GB+256GB","1,436.40 RON","~312","+48 USD (我方更便宜)"],
+   ["东北欧","罗马尼亚","Honor Magic 7 lite","8/256GB (Emag)","2,076.65 RON","~451","Note 15 Pro 5G","8GB+256GB","1,436.40 RON","~312","+139 USD (我方更便宜)"],
+   ["东北欧","罗马尼亚","Honor Magic 8 lite","8/256GB (Emag, 套装)","1,899.99 RON","~413","Note 15 Pro 5G","8GB+256GB","1,436.40 RON","~312","+101 USD (我方更便宜)"],
+   // --- P17 vs Note 15 5G (Emag 未找到，保留 —) ---
+   ["东北欧","罗马尼亚","Samsung A26 5G","6/128GB (Emag)","1,148.99 RON","~250","Note 15 5G","8GB+256GB","—","—","—"],
+   // --- P6 vs Note 15 Pro (1,267.35 RON/~276) ---
+   ["东北欧","罗马尼亚","Samsung A17 5G","4/128GB (Emag)","1,169.28 RON","~254","Note 15 Pro","8GB+256GB","1,267.35 RON","~276","-22 USD (我方更贵)"],
+   ["东北欧","罗马尼亚","Samsung A17 4G","4/128GB (Emag)","903.05 RON","~196","Note 15 Pro","8GB+256GB","1,267.35 RON","~276","-80 USD (我方更贵)"],
+   ["东北欧","罗马尼亚","Honor X7d 5G","— (Emag)","—","—","Note 15 Pro","8GB+256GB","1,267.35 RON","~276","—"],
+   ["东北欧","罗马尼亚","Honor X7e 5G","— (Emag)","—","—","Note 15 Pro","8GB+256GB","1,267.35 RON","~276","—"],
+   ["东北欧","罗马尼亚","Moto Edge 60 Fusion","8/256GB (Emag)","1,694 RON","~368","Note 15 Pro","8GB+256GB","1,267.35 RON","~276","-92 USD (我方更便宜)"],
+   // --- P7 vs Note 15 (885.60 RON/~193) ---
+   ["东北欧","罗马尼亚","Samsung A17 4G","4/128GB (Emag)","903.05 RON","~196","Note 15","6GB+128GB","885.60 RON","~193","+3 USD (持平)"],
+   ["东北欧","罗马尼亚","Samsung A17 5G","4/128GB (Emag)","1,169.28 RON","~254","Note 15","6GB+128GB","885.60 RON","~193","+61 USD (我方更便宜)"],
+   ["东北欧","罗马尼亚","Honor 400 lite","8/256GB (Emag)","1,499.19 RON","~326","Note 15","6GB+128GB","885.60 RON","~193","+133 USD (我方更便宜)"],
+   ["东北欧","罗马尼亚","Honor 600 lite","8/256GB (Emag)","1,730 RON","~376","Note 15","6GB+128GB","885.60 RON","~193","+183 USD (我方更便宜)"],
+   ["东北欧","罗马尼亚","Honor X8c","8/256GB (Emag)","1,589.99 RON","~346","Note 15","6GB+128GB","885.60 RON","~193","+153 USD (我方更便宜)"],
+   ["东北欧","罗马尼亚","Honor X8d","8/256GB (Emag)","1,399 RON","~304","Note 15","6GB+128GB","885.60 RON","~193","+111 USD (我方更便宜)"],
+   ["东北欧","罗马尼亚","Moto G86","8/256GB (Emag)","1,240.25 RON","~270","Note 15","6GB+128GB","885.60 RON","~193","+77 USD (我方更便宜)"],
+  // ===== 东南亚 (2026-07-13 竞品官网/授权渠道采集) =====
+  // --- THAILAND: BNN(Com7) ---
+  // --- P16U vs Note 15 Pro+ 5G (12+512GB ฿14,990/~408) ---
+  // --- P16 vs Note 15 Pro 5G (8+256GB ฿9,999/~272) ---
+  // --- P17 vs Note 15 5G (8+256GB ฿8,499/~231) ---
+  // --- P7 vs Note 15 (8+256GB ฿6,699/~182) ---
+  // --- THAILAND: Samsung BNN (2026-07-16 BNN websearch 采集) ---
+  // P16U vs Note 15 Pro+ 5G (12+512GB ฿14,990/~$408)
+  // P16 vs Note 15 Pro 5G (8+256GB ฿9,999/~$272)
+  // P17 vs Note 15 5G (8+256GB ฿8,499/~$231)
+  // P7 vs Note 15 (8+256GB ฿6,699/~$182)
+  // --- VIETNAM: TGDD ---
+  // --- P16U vs Note 15 Pro+ 5G (12+256GB ₫12,490,000/~490) ---
+  // --- P16 vs Note 15 Pro 5G (12+256GB ₫10,690,000/~420) ---
+  // --- MALAYSIA: samsung.com/my / honor.com/my / oppo.com/my / vivo.com/my ---
+  // --- P16 vs Note 15 Pro 5G (8+512GB RM1,399/~333) ---
+  // --- P17 vs Note 15 5G (8+256GB RM949/~226) ---
+  // --- PHILIPPINES: samsung.com.ph / oppo.com.ph / vivo.com.ph ---
+  // --- P16U vs Note 15 Pro+ 5G (12+512GB ₱25,999/~445) ---
+  // --- P16 vs Note 15 Pro 5G (12+256GB ₱17,999/~308) ---
+  // --- P6 vs Note 15 Pro 4G (8+256GB ₱12,999/~222) ---
+  // --- P7 vs Note 15 (8+128GB ₱10,999/~188) ---
+  // ===== INDONESIA (2026-07-16 Erafone 直采) =====
+  // 我方价格来源: Erafone (https://erafone.com/produk/*)
+  // Note 15 Pro+ 5G: 12+512GB Rp6,799,000/~$418 (erafone.com/produk/xiaomi-redmi-note-15-pro-plus-5g)
+  // Note 15 Pro 5G: 12+512GB Rp5,999,000/~$369, 8+256GB Rp5,099,000/~$314 (同上)
+  // Note 15 5G: 12+512GB Rp4,799,000/~$295, 8+256GB Rp4,199,000/~$258 (erafone.com/produk/xiaomi-redmi-note-15-5g)
+  // Note 15: 8+256GB Rp3,399,000/~$209, 8+128GB Rp3,199,000/~$197 (erafone.com/produk/xiaomi-redmi-note-15)
+  // --- P16U vs Note 15 Pro+ 5G (12+512GB Rp6,799,000/~$418 Erafone) ---
+  ["印尼","印尼","Samsung A57 5G","8+256GB (Erafone)","Rp7,799,000","~480","Note 15 Pro+ 5G","12GB+512GB (Erafone)","Rp6,799,000","~418","+Rp1,000,000 (≈+$62) (我方更便宜)"],
+  ["印尼","印尼","OPPO Reno16 F 5G","8+128GB (Erafone)","Rp7,599,000","~467","Note 15 Pro+ 5G","12GB+512GB (Erafone)","Rp6,799,000","~418","+Rp800,000 (≈+$49) (我方更便宜)"],
+  ["印尼","印尼","Samsung A56 5G","8+256GB (Erafone)","Rp5,999,000","~369","Note 15 Pro+ 5G","12GB+512GB (Erafone)","Rp6,799,000","~418","-Rp800,000 (≈-$49) (我方更贵)"],
+  ["印尼","印尼","Samsung A56 5G","12+256GB (Erafone)","Rp6,499,000","~400","Note 15 Pro+ 5G","12GB+512GB (Erafone)","Rp6,799,000","~418","-Rp300,000 (≈-$18) (基本持平)"],
+  ["印尼","印尼","OPPO Reno15 F","8+128GB (Erafone)","Rp6,599,000","~406","Note 15 Pro+ 5G","12GB+512GB (Erafone)","Rp6,799,000","~418","-Rp200,000 (≈-$12) (基本持平)"],
+  // --- P16 vs Note 15 Pro 5G (12+512GB Rp5,999,000/~$369 Erafone) ---
+  ["印尼","印尼","Samsung A37 5G","8+128GB (Erafone)","Rp6,599,000","~406","Note 15 Pro 5G","12GB+512GB (Erafone)","Rp5,999,000","~369","+Rp600,000 (≈+$37) (我方更便宜)"],
+  ["印尼","印尼","Samsung A36 5G","8+256GB (Erafone)","Rp4,999,000","~307","Note 15 Pro 5G","12GB+512GB (Erafone)","Rp5,999,000","~369","-Rp1,000,000 (≈-$62) (我方更贵)"],
+  ["印尼","印尼","Samsung A36 5G","12+256GB (Erafone)","Rp5,499,000","~338","Note 15 Pro 5G","12GB+512GB (Erafone)","Rp5,999,000","~369","-Rp500,000 (≈-$31) (我方更贵)"],
+  ["印尼","印尼","OPPO Reno15 F","8+128GB (Erafone)","Rp6,599,000","~406","Note 15 Pro 5G","12GB+512GB (Erafone)","Rp5,999,000","~369","+Rp600,000 (≈+$37) (我方更便宜)"],
+  // --- P17 vs Note 15 5G (12+512GB Rp4,799,000/~$295 Erafone) ---
+  ["印尼","印尼","Samsung A17 5G","8+256GB (Erafone)","Rp4,499,000","~277","Note 15 5G","12GB+512GB (Erafone)","Rp4,799,000","~295","-Rp300,000 (≈-$18) (基本持平)"],
+  // --- P7 vs Note 15 (8+256GB Rp3,399,000/~$209 Erafone) ---
+  ["印尼","印尼","Samsung A17 5G","8+128GB (Erafone)","Rp4,499,000","~277","Note 15","8GB+256GB (Erafone)","Rp3,399,000","~209","+Rp1,100,000 (≈+$68) (我方更便宜)"],
+  ["印尼","印尼","Samsung A17 LTE","8+128GB (Erafone)","Rp3,499,000","~215","Note 15","8GB+256GB (Erafone)","Rp3,399,000","~209","+Rp100,000 (≈+$6) (基本持平)"],
+  // --- P16U vs Note 15 Pro+ 5G (12+512GB Rp6,799,000/~$418 Erafone) - 新增竞品 ---
+  ["印尼","印尼","OPPO Reno14 F 5G","8+256GB (Erafone)","Rp5,599,000","~345","Note 15 Pro+ 5G","12GB+512GB (Erafone)","Rp6,799,000","~418","-Rp1,200,000 (≈-$74) (我方更贵)"],
+  ["印尼","印尼","OPPO Reno14 F 5G","12+256GB (Erafone)","Rp5,999,000","~369","Note 15 Pro+ 5G","12GB+512GB (Erafone)","Rp6,799,000","~418","-Rp800,000 (≈-$49) (我方更贵)"],
+  ["印尼","印尼","Honor X9c","8+256GB (Erafone)","Rp3,499,000","~215","Note 15 Pro+ 5G","12GB+512GB (Erafone)","Rp6,799,000","~418","+Rp3,300,000 (≈+$203) (我方更便宜)"],
+  // --- P16 vs Note 15 Pro 5G (12+512GB Rp5,999,000/~$369 Erafone) - 新增竞品 ---
+  ["印尼","印尼","OPPO Reno14 F 5G","8+256GB (Erafone)","Rp5,599,000","~345","Note 15 Pro 5G","12GB+512GB (Erafone)","Rp5,999,000","~369","-Rp400,000 (≈-$25) (基本持平)"],
+  ["印尼","印尼","OPPO Reno14 F 5G","12+256GB (Erafone)","Rp5,999,000","~369","Note 15 Pro 5G","12GB+512GB (Erafone)","Rp5,999,000","~369","持平"],
+  ["印尼","印尼","Honor X9c","8+256GB (Erafone)","Rp3,499,000","~215","Note 15 Pro 5G","12GB+512GB (Erafone)","Rp5,999,000","~369","+Rp2,500,000 (≈+$154) (我方更便宜)"],
+  // --- P17 vs Note 15 5G (12+512GB Rp4,799,000/~$295 Erafone) - 新增竞品 ---
+  ["印尼","印尼","OPPO A6 Pro 5G","— (Erafone)","Rp5,299,000","~326","Note 15 5G","12GB+512GB (Erafone)","Rp4,799,000","~295","+Rp500,000 (≈+$31) (我方更便宜)"],
+  ["印尼","印尼","OPPO A5 Pro 5G","8+256GB (Erafone)","Rp4,299,000","~265","Note 15 5G","12GB+512GB (Erafone)","Rp4,799,000","~295","+Rp500,000 (≈+$31) (我方更便宜)"],
+  ["印尼","印尼","Honor 400 Lite 5G","— (Erafone)","Rp3,699,000","~228","Note 15 5G","12GB+512GB (Erafone)","Rp4,799,000","~295","+Rp1,100,000 (≈+$68) (我方更便宜)"],
+  // --- P7 vs Note 15 (8+256GB Rp3,399,000/~$209 Erafone) - 新增竞品 ---
+  ["印尼","印尼","Infinix Hot 60 Pro+","— (Erafone)","Rp3,499,000","~215","Note 15","8GB+256GB (Erafone)","Rp3,399,000","~209","+Rp100,000 (≈+$6) (基本持平)"],
+  ["印尼","印尼","Infinix Hot 60 Pro","— (Erafone)","Rp3,299,000","~203","Note 15","8GB+256GB (Erafone)","Rp3,399,000","~209","-Rp100,000 (≈-$6) (基本持平)"],
+  ["印尼","印尼","vivo Y29","8+128GB (Erafone)","Rp2,599,000","~160","Note 15","8GB+256GB (Erafone)","Rp3,399,000","~209","+Rp800,000 (≈+$49) (我方更便宜)"],
+  ["印尼","印尼","vivo Y29","8+256GB (Erafone)","Rp2,899,000","~178","Note 15","8GB+256GB (Erafone)","Rp3,399,000","~209","+Rp500,000 (≈+$31) (我方更便宜)"],
+  ["印尼","印尼","Honor X7d","— (Erafone)","Rp4,299,000","~265","Note 15","8GB+256GB (Erafone)","Rp3,399,000","~209","-Rp900,000 (≈-$55) (我方更贵)"],
+  // ===== 中东 (2026-07-14 仅限授权渠道直采, 聚合站/报道来源已清除) =====
+  // --- SAUDI: Jarir.ad 直采 (SAR 1 USD ≈ 3.75) ---
+  // P7 vs Note 15 (8+256GB SAR 999/~$266 Jarir)
+  ["中东","沙特","Honor X8c","512GB","SAR 749 (Jarir.ad)","~200","Note 15","8GB+256GB","SAR 999 (Jarir)","~266","-SAR 250 (≈-$67) (竞品更便宜, 但X8c 512GB vs Note 15 8+256GB 非同容量)"],
+  // --- TURKEY: Vatan 页面直采 (1 USD ≈ 46.985 TRY) ---
+  // P16 vs Note 15 Pro 5G (8+256GB ₺26,999/~$575 Vatan)
+  ["中东","土耳其","Samsung A37 5G","8+256GB (Vatan)","₺25,999","~553","Note 15 Pro 5G","8GB+256GB","₺26,999 (Vatan)","~575","-₺1,000 (≈-$21) (基本持平)"],
+  // --- UAE: Emax 直采 / mi.com/ae 暂代我方价 (1 USD ≈ 3.6725 AED) ---
+  // P16U vs Note 15 Pro+ 5G (12+512GB AED 1,499/~$408 mi.com/ae)
+  ["中东","阿联酋","Samsung A56 5G","8+128GB (Emax)","AED 1,579","~430","Note 15 Pro+ 5G","12GB+512GB","AED 1,499 (mi.com/ae)","~408","+AED 80 (≈+$22) (竞品A56定位低于Pro+, 仅供参考)"],
+  // ===== 非洲 (2026-07-14 授权渠道采集: Pointek(NG)/Samsung SA/Vodacom/Takealot/2B.com.eg) =====
+  // --- SOUTH AFRICA: Samsung SA / Takealot / Vodacom (1 USD ≈ 18.5 ZAR) ---
+  // P16 (A37/A36 vs Note 15 Pro 5G) 在南非不适用 — Note 15 Pro 5G 未在南非发售 ---
+  // --- P16U vs Note 15 Pro+ 5G (12+512GB R10,999/~$595) ---
+  ["非洲","南非","Samsung A57 5G","256GB (Samsung SA / Takealot)","R11,999","~649","Note 15 Pro+ 5G","12GB+512GB","R10,999","~595","+R1,000 (≈+$54) (我方更便宜)"],
+  // --- P6 vs Note 15 Pro 4G (12+512GB R8,499/~$459) ---
+  ["非洲","南非","Samsung A36 5G","6+128GB (Samsung SA)","R7,499","~405","Note 15 Pro 4G","12GB+512GB","R8,499","~459","-R1,000 (≈-$54) (我方更贵)"],
+  ["非洲","南非","Samsung A36 5G","8+256GB (Samsung SA)","R8,999","~486","Note 15 Pro 4G","12GB+512GB","R8,499","~459","+R500 (≈+$27) (基本持平)"],
+  // --- NIGERIA: Pointek (1 USD ≈ 1,550 NGN) ---
+  // --- P16U vs Note 15 Pro+ 5G (12+512GB ₦734,400/~$474 Pointek) ---
+  ["非洲","尼日利亚","Samsung A57 5G","8+128GB (Pointek)","₦623,500","~402","Note 15 Pro+ 5G","12GB+512GB","₦734,400","~474","-₦110,900 (≈-$72) (竞品更低, 我方需关注)"],
+  ["非洲","尼日利亚","Samsung A57 5G","8+256GB (Pointek)","₦698,750","~451","Note 15 Pro+ 5G","12GB+512GB","₦734,400","~474","-₦35,650 (≈-$23) (竞品更低, 我方需关注)"],
+  // --- P16 vs Note 15 Pro (8+256GB ₦445,000/~$287 Pointek) ---
+  ["非洲","尼日利亚","Samsung A36 5G","6+128GB (Pointek)","₦486,980","~314","Note 15 Pro","8GB+256GB","₦445,000","~287","+₦41,980 (≈+$27) (我方更便宜, 但A36 6+128 vs Pro 8+256 配置不等)"],
+  ["非洲","尼日利亚","Samsung A37 5G","6+128GB (Pointek)","₦504,180","~325","Note 15 Pro","8GB+256GB","₦445,000","~287","+₦59,180 (≈+$38) (我方更便宜, 但A37 6+128 vs Pro 8+256 配置不等)"],
+  ["非洲","尼日利亚","Samsung A37 5G","8+256GB (Pointek)","₦617,050","~398","Note 15 Pro","8GB+256GB","₦445,000","~287","+₦172,050 (≈+$111) (我方更便宜)"],
+  // --- P6 vs Note 15 Pro (8+256GB ₦445,000/~$287 Pointek) ---
+  // --- EGYPT: 待 Aman Stores 采集 — 非 Aman 渠道价格已清空 ---
 ];
 
 // ===== STATE =====
 let regionFilter = '全部';
 let modelFilter = -1; // -1 = all models
-let searchQuery = '';
+let countryFilter = '';
 let sortCol = -1;
 let sortAsc = true;
 let chartModel = 0; // index into MODEL_KEYS
@@ -816,7 +1296,7 @@ function renderModelChips(){
 function getFilteredData(){
   return summaryData.filter(r => {
     if(regionFilter!=='全部' && r[0]!==regionFilter) return false;
-    if(searchQuery && !r[1].includes(searchQuery)) return false;
+    if(countryFilter && r[1]!==countryFilter) return false;
     if(modelFilter>=0 && r[modelFilter+2]==='—') return false;
     return true;
   });
@@ -829,21 +1309,20 @@ function renderTable(){
 
   const modelHeaders = MODEL_KEYS.map((m,i) => {
     const colIdx = i+2;
-    return `<th onclick="sortTable(${colIdx})"${sortCol===colIdx?(sortAsc?' class="sort-asc"':' class="sort-desc"'):''}>
+    return `<th style="text-align:center;" onclick="sortTable(${colIdx})"${sortCol===colIdx?(sortAsc?' class="sort-asc"':' class="sort-desc"'):''}>
       ${m.replace('Redmi Note 15','Note 15')}
       <span class="sort-icon"></span></th>`;
   }).join('');
 
   thead.innerHTML = `<tr>
-    <th onclick="sortTable(0)"${sortCol===0?(sortAsc?' class="sort-asc"':' class="sort-desc"'):''}>国家<span class="sort-icon"></span></th>
-    <th onclick="sortTable(1)"${sortCol===1?(sortAsc?' class="sort-asc"':' class="sort-desc"'):''}>货币<span class="sort-icon"></span></th>
+    <th style="text-align:left;" onclick="sortTable(0)"${sortCol===0?(sortAsc?' class="sort-asc"':' class="sort-desc"'):''}>国家<span class="sort-icon"></span></th>
+    <th style="text-align:left;" onclick="sortTable(1)"${sortCol===1?(sortAsc?' class="sort-asc"':' class="sort-desc"'):''}>货币<span class="sort-icon"></span></th>
     ${modelHeaders}
-    <th>渠道</th>
-    <th>质量</th>
+    <th style="text-align:left;">质量</th>
   </tr>`;
 
   if(data.length===0){
-    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">无匹配数据</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">无匹配数据</div></td></tr>';
     document.getElementById('statsBar').textContent = '';
     return;
   }
@@ -873,68 +1352,126 @@ function renderTable(){
 
   tbody.innerHTML = sorted.map(r => {
     const region = r[0], country = r[1], currency = r[2];
-    const prices = r.slice(3,8).map((p,i) =>
-      p==='—' ? `<span class="price missing">—</span>`
-        : `<span class="price" style="color:${i===chartModel?MODEL_COLORS[i]:'inherit'}">${p}</span>`
-    ).join('</td><td>');
+    const rate = getRate(currency);
+    const prices = r.slice(3,8).map((p,i) => {
+      if (p === '—' || p.startsWith('—')) return `<span class="price missing">${p}</span>`;
+      const modelName = MODEL_KEYS[i].replace('Redmi ', '');
+      // Split variants by " · " or " / "
+      const variants = p.split(/\s*[·/]\s*/).filter(Boolean);
+      const formatted = variants.map(v => {
+        v = v.trim();
+        // Match "price (config)" pattern
+        const match = v.match(/^([\d,.~]+)\s*\(([^)]+)\)$/);
+        if (match) {
+          const price = match[1], config = match[2];
+          const url = getSourceUrl(country, modelName);
+          const cleanPrice = price.replace(/^~/, '').replace(/,/g, '');
+          const priceNum = parseFloat(cleanPrice);
+          const usd = isNaN(priceNum) ? '' : '≈' + Math.round(priceNum / rate);
+          const priceDisplay = url ? priceLink(price, url)
+            : `<span class="price" style="color:${i===chartModel?MODEL_COLORS[i]:'inherit'}">${price}</span>`;
+          return `${priceDisplay}<br><span style="font-size:11px;color:var(--text2);">${config} · ${usd}</span>`;
+        }
+        // Non-matching text (e.g. placeholder, OOS)
+        const url = getSourceUrl(country, modelName);
+        return url ? priceLink(v, url) : `<span class="price" style="color:${i===chartModel?MODEL_COLORS[i]:'inherit'}">${v}</span>`;
+      });
+      return formatted.map((f, fi) => fi === 0 ? f : '<div style="margin-top:6px;">'+f+'</div>').join('');
+    }).join('</td><td>');
     return `<tr>
-      <td><span class="region-badge">${region}</span> ${country}</td>
+      <td><span class="region-badge">${region}</span> ${country}<br><span style="font-size:11px;color:var(--text2);font-weight:400;">📦 ${r[8]}</span></td>
       <td>${currency}</td>
-      <td>${prices}</td>
-      <td style="font-size:12px;color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;">${r[8]}</td>
+      <td style="vertical-align:middle;text-align:center;line-height:1.6;">${prices}</td>
       <td>${qBadge(r[9])}</td>
     </tr>`;
   }).join('');
 }
 
-function renderChartModelChips(){
-  const el = document.getElementById('chartModelChips');
-  if(!el) return;
-  el.innerHTML = MODEL_KEYS.map((m,i) =>
-    `<div class="model-chip${chartModel===i?' active':''}" data-chart-model="${i}">${m.replace('Redmi Note 15','Note 15')}</div>`
-  ).join('');
-}
+// ===== Samsung 价格对照表（概览页 - 宽表格式，每国家一行，品类为列）=====
+const SAMSUNG_CATS = [
+  { label: 'A17 4G',     test: c => /^Samsung A17 (4G|LTE)/.test(c) || c === 'Samsung A17 4G' },
+  { label: 'A17 5G',     test: c => /^Samsung A17 5G/.test(c) },
+  { label: 'A26 5G',     test: c => /^Samsung A26/.test(c) },
+  { label: 'A27 5G',     test: c => /^Samsung A27/.test(c) },
+  { label: 'A36 5G',     test: c => /^Samsung A36/.test(c) },
+  { label: 'A37 5G',     test: c => /^Samsung A37/.test(c) },
+  { label: 'A56 5G',     test: c => /^Samsung A56/.test(c) },
+  { label: 'A57 5G',     test: c => /^Samsung A57/.test(c) },
+];
+function renderSamsungTable() {
+  const thead = qs('#samsungTable thead');
+  const tbody = qs('#samsungTable tbody');
 
-function renderBarChart(){
-  const el = document.getElementById('barChart');
-  const hint = document.getElementById('chartHint');
-  const modelName = MODEL_KEYS[chartModel];
-  hint.innerHTML = `📊 <strong>${modelName}</strong> 各国价格对比 (折合 USD) — 选择型号查看`;
+  let rows = compData.filter(r => r[2].startsWith('Samsung'));
+  if (regionFilter !== '全部') rows = rows.filter(r => r[0] === regionFilter);
+  if (countryFilter) rows = rows.filter(r => r[1] === countryFilter);
 
-  // Use USD from detailData
-  const items = [];
-  const seen = new Set();
-  for(const r of summaryData){
-    const country = r[1];
-    if(seen.has(country)) continue;
-    const usdInfo = getUsdPrice(country, modelName);
-    if(!usdInfo) continue;
-    seen.add(country);
-    items.push({
-      country,
-      region: r[0],
-      usd: usdInfo.usd,
-      local: usdInfo.local,
-      currency: usdInfo.currency,
-      config: usdInfo.config,
-      usdDisplay: usdInfo.usdDisplay
-    });
-  }
-  if(items.length===0){
-    el.innerHTML = '<div class="empty-state">该型号暂无跨国家可比数据</div>';
+  if (rows.length === 0) {
+    thead.innerHTML = '';
+    tbody.innerHTML = '<tr><td colspan="'+(2+SAMSUNG_CATS.length)+'"><div class="empty-state">无 Samsung 竞品数据</div></td></tr>';
     return;
   }
-  items.sort((a,b) => b.usd - a.usd);
-  const maxVal = items[0].usd;
 
-  el.innerHTML = items.map(item => {
-    const pct = Math.max(3, (item.usd / maxVal) * 100);
-    const color = MODEL_COLORS[chartModel];
-    return `<div class="bar-row">
-      <div class="bar-label">${item.country}</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
-      <div class="bar-value">$${item.usdDisplay} <span style="font-size:11px;color:var(--text2);">${item.currency} ${item.local}</span></div>
-    </div>`;
+  // Group by region+country, preserve region order
+  const regionOrder = REGIONS.filter(r => r !== '全部');
+  const groups = {};
+  rows.forEach(r => {
+    const key = r[0] + '|' + r[1];
+    if (!groups[key]) groups[key] = { region: r[0], country: r[1], entries: [] };
+    groups[key].entries.push(r);
+  });
+  const groupList = Object.values(groups).sort((a, b) => {
+    const ri = regionOrder.indexOf(a.region) - regionOrder.indexOf(b.region);
+    if (ri) return ri;
+    return a.country.localeCompare(b.country, 'zh-CN');
+  });
+
+  // Determine active categories (those with data in current view)
+  const activeCats = SAMSUNG_CATS.filter(cat =>
+    groupList.some(g => g.entries.some(e => cat.test(e[2])))
+  );
+
+  // Headers (match mainTable style — 国家左对齐，品类列居中对齐)
+  let headerHtml = '<tr><th style="text-align:left;">国家</th>';
+  activeCats.forEach(cat => { headerHtml += '<th style="text-align:center;">'+cat.label+'</th>'; });
+  headerHtml += '</tr>';
+  thead.innerHTML = headerHtml;
+
+  // Body (match mainTable row style)
+  tbody.innerHTML = groupList.map(g => {
+    // Collect unique channels for country sub-label
+    const channels = [...new Set(g.entries.map(e => {
+      const m = (e[3]||'').match(/\(([^)]+)\)\s*$/);
+      return m ? m[1].trim() : '';
+    }).filter(Boolean))];
+
+    let cells = '';
+    activeCats.forEach(cat => {
+      const matched = g.entries.filter(e => cat.test(e[2]));
+      if (matched.length === 0) {
+        cells += '<td style="text-align:center;color:var(--text2);font-size:13px;">—</td>';
+      } else {
+        const content = matched.map(e => {
+          const configClean = (e[3]||'').replace(/\s*\([^)]*\)\s*$/, '').trim();
+          const usdVal = e[5].replace(/^~/,'');
+          const url = getSourceUrl(g.country, e[2]);
+          const priceHtml = url ? priceLink(e[4], url) : `<span class="price">${e[4]}</span>`;
+          // Same format as mainTable: price on top, config · ~$USD below
+          return `<div style="margin:3px 0;">${priceHtml}<br><span style="font-size:11px;color:var(--text2);">${configClean} · ~$${usdVal}</span></div>`;
+        }).join('');
+        cells += '<td style="text-align:center;vertical-align:middle;line-height:1.6;">'+content+'</td>';
+      }
+    });
+
+    // Country cell: same format as mainTable (region badge + country + 📦 channel below)
+    const countryCell = '<span class="region-badge">'+g.region+'</span> '+g.country
+      + '<br><span style="font-size:11px;color:var(--text2);font-weight:400;">'
+      + channels.map(ch=>'📦 '+ch).join(' · ')+'</span>';
+
+    return '<tr>'
+      + '<td style="white-space:nowrap;">'+countryCell+'</td>'
+      + cells
+      + '</tr>';
   }).join('');
 }
 
@@ -945,6 +1482,53 @@ function toggleCollapse(el) {
   const isOpen = body.classList.contains('open');
   body.classList.toggle('open');
   if (arrow) arrow.classList.toggle('open');
+}
+
+// ===== 汇率配置 =====
+const EXCHANGE_RATES = {
+  HKD:7.82, THB:33.65, VND:26286, MYR:4.09, PHP:61.7, IDR:16200,
+  RUB:90, KZT:460, EUR:0.92, CLP:950, PEN:3.75, MXN:18.5,
+  COP:4200, SAR:3.75, AED:3.6725, TRY:46.985, EGP:48,
+  MAD:10, NGN:1600, ZAR:18.5, CZK:24, PLN:4.0, RON:4.6
+};
+const CURRENCY_LABELS = {
+  HKD:'港元', THB:'泰铢', VND:'越南盾', MYR:'令吉', PHP:'比索', IDR:'印尼盾',
+  RUB:'卢布', KZT:'坚戈', EUR:'欧元', CLP:'比索', PEN:'索尔', MXN:'比索',
+  COP:'比索', SAR:'里亚尔', AED:'迪拉姆', TRY:'里拉', EGP:'埃镑',
+  MAD:'迪拉姆', NGN:'奈拉', ZAR:'兰特', CZK:'克朗', PLN:'兹罗提', RON:'列伊'
+};
+
+function getRate(currency) { return EXCHANGE_RATES[currency] || 1; }
+
+function renderExchangeRates() {
+  const el = document.getElementById('exchangeRatePanel');
+  if (!el) return;
+  const sorted = Object.entries(EXCHANGE_RATES).sort((a,b) => a[0].localeCompare(b[0]));
+  const rows = sorted.map(([code, rate]) =>
+    `<tr><td><strong>${code}</strong></td><td style="color:var(--text2);padding:0 12px;">${CURRENCY_LABELS[code]||''}</td><td style="text-align:right;font-variant-numeric:tabular-nums;">1 USD = ${rate}</td></tr>`
+  ).join('');
+  el.innerHTML = `<table style="width:auto;font-size:12px;"><tbody>${rows}</tbody></table>
+    <div style="margin-top:6px;font-size:11px;color:var(--text2);">💡 修改汇率请编辑 JS 中 EXCHANGE_RATES 常量</div>`;
+}
+
+function fmtPrice(s) {
+  if (!s || s === '—') return s || '—';
+  return s.replace(/([₸₽€$£₩฿₫₹₺₴₪₦₵₡₢₣₤₥₦₧₨₪₫€₭₮₰₱₲₳₴₵₶₷₸₹₺₻₼₾])(\d)/g, '$1 $2')
+          .replace(/^(Rp)(\d)/, '$1 $2')
+          .replace(/^(S\/)(\d)/, '$1 $2');
+}
+
+function calcDiff(compUsd, ourUsd) {
+  if (compUsd === '—' || ourUsd === '—') return { text: '—', type: 'none' };
+  const cv = parseFloat((compUsd || '').replace(/[~$USD,\s]/g, ''));
+  const ov = parseFloat((ourUsd || '').replace(/[~$USD,\s]/g, ''));
+  if (isNaN(cv) || isNaN(ov)) return { text: '—', type: 'none' };
+  const d = cv - ov, ad = Math.abs(d);
+  if (ad < 1) return { text: '持平', type: 'flat' };
+  if (ad <= 5) return { text: `${d > 0 ? '+' : ''}$${d.toFixed(0)} (持平)`, type: 'flat' };
+  if (ad < 10) return { text: `${d > 0 ? '+' : ''}$${d.toFixed(0)} (基本持平)`, type: 'flat' };
+  if (d > 0) return { text: `+$${ad.toFixed(0)} (我方更便宜)`, type: 'cheaper' };
+  return { text: `-$${ad.toFixed(0)} (我方更贵)`, type: 'expensive' };
 }
 
 function renderCompPriceTable(){
@@ -958,8 +1542,8 @@ function renderCompPriceTable(){
   const tbody = qs('#compPriceTable tbody');
 
   thead.innerHTML = `<tr>
-    <th>地区</th><th>国家</th><th>竞品</th><th>配置</th><th>竞品当地价</th><th>≈USD</th>
-    <th>我方型号</th><th>我方配置</th><th>我方当地价</th><th>≈USD</th><th>价差</th>
+    <th>地区</th><th>国家</th><th>竞品</th><th>竞品当地价</th><th>≈USD</th>
+    <th>我方型号</th><th>我方当地价</th><th>≈USD</th><th>价差</th>
   </tr>`;
 
   let filtered = compData.filter(r => {
@@ -977,33 +1561,36 @@ function renderCompPriceTable(){
   document.getElementById('compPriceStat').textContent = `显示 ${filtered.length} / ${compData.length} 条`;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="11"><div class="empty-state">无匹配数据</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">无匹配数据</div></td></tr>';
     return;
   }
 
   tbody.innerHTML = filtered.map(r => {
-    const diff = r[10];
-    let diffColor = '';
-    if (diff.includes('我方更便宜'))
-      diffColor = ' style="color:var(--green);font-weight:600;"';
-    else if (diff.includes('我方更贵'))
-      diffColor = ' style="color:var(--red);font-weight:600;"';
-    else if (diff === '持平' || diff.includes('基本持平'))
-      diffColor = ' style="color:var(--text2);"';
-    else if (diff === '—')
-      diffColor = ' style="color:var(--text2);"';
+    const diff = calcDiff(r[5], r[9]);
+    const diffColor = diff.type === 'cheaper' ? ' style="color:var(--green);font-weight:600;"'
+      : diff.type === 'expensive' ? ' style="color:var(--red);font-weight:600;"'
+      : ' style="color:var(--text2);"';
+    // Extract channel from spec (e.g. "12+256GB (Fortress 限時優惠)" → clean="12+256GB", ch="Fortress 限時優惠")
+    const compSpec = r[3] || '';
+    const compChMatch = compSpec.match(/\(([^)]+)\)$/);
+    const compCh = compChMatch ? compChMatch[1].trim() : '';
+    const compSpecClean = compChMatch ? compSpec.replace(/\s*\([^)]+\)$/, '').trim() : compSpec;
+    const ourChMatch = (r[7]||'').match(/\(([^)]+)\)$/);
+    const ourCh = ourChMatch ? ourChMatch[1].trim() : '';
+    const ourSpecClean = ourChMatch ? r[7].replace(/\s*\([^)]+\)$/, '').trim() : (r[7]||'');
+    const chStr = [compCh, ourCh].filter(Boolean).join(' / ');
+    const compPriceUrl = getSourceUrl(r[1], r[2]);
+    const ourPriceUrl = getSourceUrl(r[1], r[6]);
     return `<tr>
       <td><span class="region-badge">${r[0]}</span></td>
-      <td style="font-weight:600;">${r[1]}</td>
+      <td style="font-weight:600;">${r[1]}${chStr ? `<br><span style="font-size:11px;color:var(--text2);font-weight:400;">📦 ${chStr}</span>` : ''}</td>
       <td>${r[2]}</td>
-      <td style="color:var(--text2);font-size:12px;max-width:140px;">${r[3]}</td>
-      <td>${r[4]}</td>
-      <td style="font-size:12px;color:var(--text2);">${r[5]}</td>
+      <td>${priceLink(fmtPrice(r[4]), compPriceUrl)}<br><span style="color:var(--text2);font-size:11px;">${compSpecClean}</span></td>
+      <td style="font-size:12px;color:var(--text2);">${fmtPrice(r[5])}</td>
       <td>${r[6]}</td>
-      <td style="color:var(--text2);font-size:12px;">${r[7]}</td>
-      <td>${r[8]}</td>
-      <td style="font-size:12px;color:var(--text2);">${r[9]}</td>
-      <td${diffColor}>${diff}</td>
+      <td>${priceLink(fmtPrice(r[8]), ourPriceUrl)}<br><span style="color:var(--text2);font-size:11px;">${ourSpecClean}</span></td>
+      <td style="font-size:12px;color:var(--text2);">${fmtPrice(r[9])}</td>
+      <td${diffColor}>${diff.text}</td>
     </tr>`;
   }).join('');
 }
@@ -1156,7 +1743,7 @@ function renderHistoryChart() {
     container.innerHTML = `<div class="trend-single">
       <div class="big-price">~$${p.usd}</div>
       <div class="meta">${country} · ${model} · 折合 USD</div>
-      <div style="color:var(--text2);font-size:12px;margin-top:4px;">当地: ${p.local} · 快照: ${p.date}</div>
+      <div style="color:var(--text2);font-size:12px;margin-top:4px;">当地: ${fmtPrice(p.local)} · 快照: ${p.date}</div>
       <div class="hint">📈 后续添加更多数据快照后将自动显示价格趋势线<br>计划更新频率: 每周/每两周一次</div>
     </div>`;
     return;
@@ -1198,6 +1785,178 @@ function renderHistoryChart() {
   </svg>`;
 }
 
+// ===== PRODUCT-COMP FOLDING VIEW =====
+let pcRegion = '全部';
+const pcFilter = { brand: '', comp: '', country: '' };
+const pcSearch = { comp: '', country: '' };
+
+function getPcOptions(type) {
+  let data = compData;
+  if (pcRegion !== '全部') data = data.filter(r => r[0] === pcRegion);
+  if (pcFilter.brand) data = data.filter(r => (r[2]||'').split(' ')[0] === pcFilter.brand);
+  if (pcFilter.comp) data = data.filter(r => r[2] === pcFilter.comp);
+  if (pcFilter.country) data = data.filter(r => r[1] === pcFilter.country);
+  switch(type) {
+    case 'brand': return [...new Set(data.map(r => (r[2]||'').split(' ')[0]).filter(Boolean))].sort();
+    case 'comp': return [...new Set(data.map(r => r[2]).filter(Boolean))].sort();
+    case 'country': return [...new Set(data.map(r => r[1]).filter(Boolean))].sort();
+    default: return [];
+  }
+}
+
+function renderPcChips(containerId, items, selectedVal, searchQ) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const filtered = searchQ ? items.filter(i => i.toLowerCase().includes(searchQ.toLowerCase())) : items;
+  if (selectedVal && !items.includes(selectedVal)) selectedVal = '';
+  el.innerHTML = '<div class="filter-chip all-chip' + (!selectedVal ? ' active' : '') + '" data-pc-v="">全部</div>' +
+    filtered.map(i => '<div class="filter-chip' + (selectedVal === i ? ' active' : '') + '" data-pc-v="' + i.replace(/"/g,'&quot;') + '">' + i + '</div>').join('');
+}
+
+function populatePcFilters() {
+  const brands = getPcOptions('brand');
+  const comps = pcFilter.brand ? getPcOptions('comp') : [];
+  const countries = getPcOptions('country');
+  renderPcChips('pcBrandChips', brands, pcFilter.brand, '');
+  renderPcChips('pcCompChips', comps, pcFilter.comp, pcSearch.comp);
+  renderPcChips('pcCountryChips', countries, pcFilter.country, pcSearch.country);
+}
+
+function filterPcChips(type) {
+  const searchMap = { comp:'pcCompSearch', country:'pcCountrySearch' };
+  const chipMap = { comp:'pcCompChips', country:'pcCountryChips' };
+  const q = document.getElementById(searchMap[type]).value;
+  pcSearch[type] = q;
+  const items = getPcOptions(type);
+  renderPcChips(chipMap[type], items, pcFilter[type], q);
+}
+
+function togglePcGroup(el) {
+  const arrow = el.querySelector('.arrow');
+  const body = el.nextElementSibling;
+  if (!body) return;
+  body.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open');
+}
+
+function renderPcRegionTabs() {
+  const el = document.getElementById('pcRegionTabs');
+  if (!el) return;
+  const allRegions = ['全部', ...REGIONS.filter(r => r !== '全部')];
+  el.innerHTML = allRegions.map(r =>
+    `<div class="region-tab${r===pcRegion?' active':''}" data-pc-region="${r}">${r}</div>`
+  ).join('');
+}
+
+function renderProductCompView() {
+  const container = document.getElementById('productCompContainer');
+  const statsEl = document.getElementById('pcStatsBar');
+  if (!container) return;
+
+  // Filter by region + cascading filters
+  let data = compData;
+  if (pcRegion !== '全部') data = data.filter(r => r[0] === pcRegion);
+  if (pcFilter.brand) data = data.filter(r => (r[2]||'').split(' ')[0] === pcFilter.brand);
+  if (pcFilter.comp) data = data.filter(r => r[2] === pcFilter.comp);
+  if (pcFilter.country) data = data.filter(r => r[1] === pcFilter.country);
+
+  // Update badge and stat
+  const badge = document.getElementById('pcBadge');
+  if (badge) badge.textContent = data.length;
+  const statEl = document.getElementById('pcFilterStat');
+  if (statEl) statEl.textContent = `筛选后 ${data.length} / ${compData.length} 条`;
+
+  if (data.length === 0) {
+    container.innerHTML = '<div class="empty-state">无匹配竞品价格数据，尝试调整筛选条件</div>';
+    if (statsEl) statsEl.textContent = '';
+    return;
+  }
+
+  // Group by product code
+  const byProduct = {};
+  // Sort by name length descending so "Note 15 5G" matches before "Note 15"
+  const nameEntries = Object.entries(PRODUCT_NAMES).sort((a,b) => b[1].length - a[1].length);
+  for (const row of data) {
+    const ourModel = row[6];
+    let code = null;
+    for (const [c, shortName] of nameEntries) {
+      if (ourModel.includes(shortName)) { code = c; break; }
+    }
+    if (!code) continue;
+    if (!byProduct[code]) byProduct[code] = [];
+    byProduct[code].push(row);
+  }
+
+  const productCount = Object.keys(byProduct).length;
+  if (statsEl) statsEl.textContent = `共 ${data.length} 条竞品价格 · ${productCount} 个产品系列`;
+
+  // Build full model name map
+  const codeToFull = {};
+  for (const code of PRODUCT_CODES) {
+    const short = PRODUCT_NAMES[code];
+    codeToFull[code] = MODEL_KEYS.find(m => m.includes(short)) || short;
+  }
+
+  // Render by product order
+  let html = '';
+  for (const code of PRODUCT_CODES) {
+    const rows = byProduct[code];
+    if (!rows || rows.length === 0) continue;
+    const fullName = codeToFull[code] || PRODUCT_NAMES[code];
+
+    html += `<div style="margin-bottom:12px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+      <div class="collapse-toggle" style="margin-bottom:0;border-radius:0;border:none;background:var(--surface2);font-weight:600;font-size:14px;" onclick="togglePcGroup(this)">
+        <span class="arrow open">▶</span>
+        ${fullName.replace('Redmi Note 15','Note 15')} <span style="font-size:12px;color:var(--text2);font-weight:400;">(${PRODUCT_NAMES[code]})</span>
+        <span style="margin-left:auto;font-size:12px;color:var(--text2);font-weight:400;">${rows.length} 条竞品</span>
+      </div>
+      <div class="collapse-body open">
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr><th>区域</th><th>国家</th><th>竞品</th><th>竞品当地价</th><th>≈USD</th><th>我方当地价</th><th>≈USD</th><th>价差</th></tr>
+            </thead>
+            <tbody>
+              ${rows.map(r => {
+                const diff = calcDiff(r[5], r[9]);
+                const dc = diff.type === 'cheaper' ? ' style="color:var(--green);font-weight:600;"' : diff.type === 'expensive' ? ' style="color:var(--red);font-weight:600;"' : ' style="color:var(--text2);"';
+                const cs = r[3]||''; const cm = cs.match(/\(([^)]+)\)$/);
+                const cc = cm ? cm[1].trim() : ''; const csc = cm ? cs.replace(/\s*\([^)]+\)$/,'').trim() : cs;
+                const os = r[7]||''; const om = os.match(/\(([^)]+)\)$/);
+                const oc = om ? om[1].trim() : ''; const osc = om ? os.replace(/\s*\([^)]+\)$/,'').trim() : os;
+                const ch = [cc, oc].filter(Boolean).join(' / ');
+                const pcUrl = getSourceUrl(r[1], r[2]);
+                const poUrl = getSourceUrl(r[1], r[6]);
+                return `<tr>
+                  <td><span class="region-badge">${r[0]}</span></td>
+                  <td style="font-weight:600;">${r[1]}${ch ? `<br><span style="font-size:11px;color:var(--text2);font-weight:400;">📦 ${ch}</span>` : ''}</td>
+                  <td>${r[2]}</td>
+                  <td>${priceLink(fmtPrice(r[4]), pcUrl)}<br><span style="color:var(--text2);font-size:11px;">${csc}</span></td>
+                  <td style="font-size:12px;color:var(--text2);">${fmtPrice(r[5])}</td>
+                  <td>${priceLink(fmtPrice(r[8]), poUrl)}<br><span style="color:var(--text2);font-size:11px;">${osc}</span></td>
+                  <td style="font-size:12px;color:var(--text2);">${fmtPrice(r[9])}</td>
+                  <td${dc}>${diff.text}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function setPcRegion(r) {
+  pcRegion = r;
+  // Reset cascading filters when region changes
+  pcFilter.brand = ''; pcFilter.comp = ''; pcFilter.country = '';
+  pcSearch.comp = ''; pcSearch.country = '';
+  renderPcRegionTabs();
+  populatePcFilters();
+  renderProductCompView();
+}
+
 // ===== SECTION SWITCHING =====
 function switchSection(section) {
   document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
@@ -1206,10 +1965,12 @@ function switchSection(section) {
     if(section==='overview' && text.includes('价格')) t.classList.add('active');
     if(section==='competitor' && text.includes('竞品价格')) t.classList.add('active');
     if(section==='history' && text.includes('历史')) t.classList.add('active');
+    if(section==='productComp' && text.includes('产品对标')) t.classList.add('active');
   });
   document.getElementById('overviewSection').style.display = section === 'overview' ? '' : 'none';
   document.getElementById('competitorSection').style.display = section === 'competitor' ? '' : 'none';
   document.getElementById('historySection').style.display = section === 'history' ? '' : 'none';
+  document.getElementById('productCompSection').style.display = section === 'productComp' ? '' : 'none';
   if(section==='history'){
     renderHistoryRegionTabs();
     populateHistorySelects();
@@ -1225,38 +1986,52 @@ function switchSection(section) {
     renderCompMapping();
     document.getElementById('compMappingCount').textContent = `(${Object.keys(compMapping[compProduct]||{}).length} 国, ${Object.values(compMapping[compProduct]||{}).flat().length} 竞品条)`;
   }
+  if(section==='productComp'){
+    renderPcRegionTabs();
+    populatePcFilters();
+    renderProductCompView();
+  }
 }
 
 // ===== ACTIONS =====
 function setRegion(r){
   regionFilter = r;
+  countryFilter = '';
   qsa('.region-tab').forEach(t => t.classList.toggle('active', t.textContent===r));
+  populateCountrySelect();
   renderTable();
-  renderBarChart();
+  renderSamsungTable();
 }
 function setModelFilter(idx){
   modelFilter = idx;
   qsa('.model-chip').forEach(c => c.classList.toggle('active', parseInt(c.dataset.idx||'-1')===idx));
   renderTable();
+  renderSamsungTable();
 }
 function filterData(){
-  searchQuery = document.getElementById('searchInput').value.trim();
+  countryFilter = document.getElementById('countrySelect').value;
   renderTable();
+  renderSamsungTable();
+}
+
+function populateCountrySelect(){
+  const sel = document.getElementById('countrySelect');
+  if(!sel) return;
+  let pool = summaryData;
+  if (regionFilter !== '全部') pool = pool.filter(r => r[0] === regionFilter);
+  let countries = [...new Set(pool.map(r => r[1]))].sort((a,b) => a.localeCompare(b, 'zh-CN'));
+  sel.innerHTML = '<option value="">🌍 全部国家</option>' +
+    countries.map(c => '<option value="' + c.replace(/"/g,'&quot;') + '"' + (countryFilter===c?' selected':'') + '>' + c + '</option>').join('');
 }
 function sortTable(col){
   if(sortCol===col) sortAsc = !sortAsc;
   else { sortCol = col; sortAsc = true; }
   renderTable();
+  renderSamsungTable();
 }
 function toggleTheme(){
   document.body.classList.toggle('dark');
   renderHistoryChart(); // refresh SVG axis colors
-}
-function setChartModel(idx){
-  chartModel = idx;
-  renderChartModelChips();
-  renderBarChart();
-  renderTable();
 }
 function setCompRegion(r){
   compRegion = r;
@@ -1293,10 +2068,10 @@ function setHistoryRegion(r){
 // ===== INIT =====
 renderKPI();
 renderRegionTabs();
+populateCountrySelect();
 renderModelChips();
-renderChartModelChips();
 renderTable();
-renderBarChart();
+renderSamsungTable();
 populateCpFilters();
 renderCompPriceTable();
 initHistory();
@@ -1304,14 +2079,10 @@ renderCompRegionTabs();
 renderCompProductChips();
 renderCompBrandChips();
 renderCompMapping();
-
-// Chart model selector
-document.getElementById('chartModelChips').addEventListener('click', e => {
-  const chip = e.target.closest('.model-chip');
-  if(!chip) return;
-  const idx = parseInt(chip.dataset.chartModel);
-  if(!isNaN(idx)) { setChartModel(idx); }
-});
+renderPcRegionTabs();
+populatePcFilters();
+renderProductCompView();
+renderExchangeRates();
 
 // Unified filter chip click handler (竞品价格 + 历史国家)
 document.addEventListener('click', e => {
@@ -1335,13 +2106,25 @@ document.addEventListener('click', e => {
     const type = map[parent];
     if (!type) return;
     cpFilter[type] = val;
-    // Clear downstream filters when upstream changes
     if (type === 'region') { cpFilter.country = ''; cpFilter.brand = ''; cpFilter.comp = ''; cpFilter.our = ''; }
     else if (type === 'country') { cpFilter.brand = ''; cpFilter.comp = ''; cpFilter.our = ''; }
     else if (type === 'brand') { cpFilter.comp = ''; }
-    // Recalculate all options with cascading
     populateCpFilters();
     renderCompPriceTable();
+    return;
+  }
+  // Product-comp filter chips (品牌→型号 cascade)
+  const pcChip = e.target.closest('#pcBrandChips .filter-chip, #pcCompChips .filter-chip, #pcCountryChips .filter-chip');
+  if (pcChip) {
+    const val = pcChip.dataset.pcV || '';
+    const parent = pcChip.parentElement.id;
+    const map = { pcBrandChips:'brand', pcCompChips:'comp', pcCountryChips:'country' };
+    const type = map[parent];
+    if (!type) return;
+    pcFilter[type] = val;
+    if (type === 'brand') { pcFilter.comp = ''; pcSearch.comp = ''; }
+    populatePcFilters();
+    renderProductCompView();
     return;
   }
 });
@@ -1374,6 +2157,11 @@ document.addEventListener('click', e => {
   const histRegChip = e.target.closest('[data-history-region]');
   if(histRegChip) {
     setHistoryRegion(histRegChip.dataset.historyRegion);
+    return;
+  }
+  const pcRegChip = e.target.closest('[data-pc-region]');
+  if(pcRegChip) {
+    setPcRegion(pcRegChip.dataset.pcRegion);
     return;
   }
 });
